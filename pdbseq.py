@@ -61,9 +61,9 @@ def chain_sequence_aaselect(chain):
 
 
 def res_oneletter(res):
-    rname3 = res.get_resname()
-    rname3 = rname3[0].upper() + rname3[1:3].lower()
     try:
+        rname3 = res.get_resname()
+        rname3 = rname3[0].upper() + rname3[1:3].lower()
         rname1 = IUPACData.protein_letters_3to1[rname3]
     except KeyError:
         rname1 = '.'
