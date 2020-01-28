@@ -10,8 +10,10 @@ from Bio.PDB import *
 from Bio.Seq import Seq
 from Bio.Data import IUPACData
 
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
+
 
 def opengz(filename, args: 'r'):
     if filename[-2:] == "gz":
@@ -22,20 +24,41 @@ def opengz(filename, args: 'r'):
         openarg = args
     return openfunc(filename, openarg)
 
+
+def pdb_id_from_file(filename):
+    id = os.path.basename(filename)
+    if id.startswith("pdb"):
+        id = id[3:]
+    if id.endswith(".gz"):
+        id = id[0:-3]
+    if id.endswith(".pdb"):
+        id = id[0:-4]
+    if id.endswith(".mmcif"):
+        id = id[0:-6]
+    if id.endswith(".cif"):
+        id = id[0:-4]
+    if id.endswith(".ent"):
+        id = id[0:-4]
+    id = id.upper()
+    return id
+
+
 def chain_sequence_ppbuild(chain):
     # Fails if chain is dicontinued
     ppb = PPBuilder()
     pp = ppb.build_peptides(chain)
     if pp and len(pp):
-        return(pp[0].get_sequence())
+        return (pp[0].get_sequence())
     else:
-        return(None)
+        return (None)
+
 
 def chain_sequence_aaselect(chain):
     # Ok if chain is discontinued
     res_list = chain.get_list()
-    res_list_aa = [ res for res in res_list if is_aa(res)]
+    res_list_aa = [res for res in res_list if is_aa(res)]
     return res_list_aa
+
 
 def res_oneletter(res):
     rname3 = res.get_resname()
@@ -46,11 +69,16 @@ def res_oneletter(res):
         rname1 = '.'
     return rname1
 
+
 def protein_one_letter_string(res_list):
+    if not res_list:
+        return (0, "")
+
     prev_id = None
+    sequence_start = None
     seq = ''
     for r in res_list:
-        this_id = r.get_id()[1] # residue number, may repeat o have gaps
+        this_id = r.get_id()[1]  # residue number, may repeat o have gaps
         if prev_id:
             if this_id == prev_id or this_id == prev_id + 1:
                 seq += res_oneletter(r)
@@ -59,35 +87,40 @@ def protein_one_letter_string(res_list):
                     seq += "."
                 seq += res_oneletter(r)
         else:
+            sequence_start = this_id
             seq += res_oneletter(r)
         prev_id = this_id
-    return Seq(seq)
+    return (sequence_start, Seq(seq))
+
 
 def res_insertions(res_list):
     res_list_ins = [res for res in res_list if res.get_id()[2] != ' ']
     return res_list_ins
 
+
 def chain_water(chain):
     # Ok if chain is discontinued
     res_list = chain.get_list()
-    res_list_water = [ res for res in res_list if res.get_id()[0] == 'W']
+    res_list_water = [res for res in res_list if res.get_id()[0] == 'W']
     return res_list_water
+
 
 def main():
     arg_parser = argparse.ArgumentParser(
         usage='Print sequence information from pdb or mmcif file(s)')
     arg_parser.add_argument('struct', type=str, help='structures in pdb or mmcif format', nargs='+')
-    arg_parser.add_argument('-p', '--print-header', action='store_true', help='print header')
+    arg_parser.add_argument('-p', '--print-header', action='store_true',
+                            help='print header')
     arg_parser.add_argument('-c', '--print-chain', action='store_true',
-                           help='print chain sequence in one-letter format')
+                            help='print chain sequence in one-letter format')
     arg_parser.add_argument('-C', '--print-chain-full', action='store_true',
-                           help='print full chain sequence')
+                            help='print full chain sequence (one line per residue)')
     arg_parser.add_argument('-w', '--pdb-warnings', action='store_true',
-                           help='show pdb parsing warnings', default=False)
+                            help='show structure parsing warnings', default=False)
     arg_parser.add_argument('-i', '--print-insertions', action='store_true',
-                           help='print insertions in sequence')
+                            help='print insertions in sequence')
     arg_parser.add_argument('--mmcif', action='store_true',
-                           help='Assume that all structures are in mmcif format')
+                            help='Assume that all structures are in mmcif format')
 
     args = arg_parser.parse_args()
     if not args.pdb_warnings:
@@ -102,30 +135,32 @@ def main():
         for structf in args.struct:
             try:
                 with opengz(structf, 'r') as handle:
-                    structure = struct_parser.get_structure(structf, handle)
+                    file_id = pdb_id_from_file(structf)
+                    structure = struct_parser.get_structure(file_id, handle)
                     if args.print_header:
                         for key, value in sorted(structure.header.items()):
-                            print("{:20} : {}".format(key,value))
+                            print("{:20} : {}".format(key, value))
                     for model in structure:
                         for chain in model:
                             # seq_ppb = chain_sequence_ppbuild(chain)
-                            seq_aa = chain_sequence_aaselect(chain)
-                            res_ins = res_insertions(seq_aa)
+                            chain_aa = chain_sequence_aaselect(chain)
+                            (seq_start, Seq_aa) = protein_one_letter_string(chain_aa)
+                            res_ins = res_insertions(chain_aa)
                             seq_water = chain_water(chain)
-                            #len_aa, len_ppb, len_wat, len_ins = 0, 0, 0, 0
+                            # len_aa, len_ppb, len_wat, len_ins = 0, 0, 0, 0
                             # len_ppb = 0 if not seq_ppb else len(seq_ppb)
-                            len_aa = 0 if not seq_aa else len(seq_aa)
+                            len_aa = 0 if not chain_aa else len(chain_aa)
+                            len_aa_gaps = 0 if not chain_aa else len(Seq_aa)
                             len_ins = 0 if not res_ins else len(res_ins)
                             len_water = 0 if not seq_water else len(seq_water)
-                            print("> {} model= {:2}, chain= {:1}, {:4} AA, {:3} insertions, {:3} WAT".
-                                  format(os.path.basename(structf), model.get_id(), chain.get_id(),
-                                         len_aa, len_ins, len_water))
+                            print("> {} model= {:2}, chain= {:1}, {:4} ({:4}) AA, start = {:4}, {:3} insertions, {:3} WAT".
+                                  format(file_id, model.get_id(), chain.get_id(),
+                                         len_aa, len_aa_gaps, seq_start, len_ins, len_water))
                             if args.print_chain:
-                                if seq_aa and len(seq_aa) > 0:
-                                    str_seq_aa = protein_one_letter_string(seq_aa)
-                                    for i in range(0,len(str_seq_aa),60):
-                                        print("   {}".format(str_seq_aa[i:i+60]))
-                                        #if seq_ppb and len(seq_ppb)>0 :
+                                if chain_aa and len(chain_aa) > 0:
+                                    for i in range(0, len(Seq_aa), 60):
+                                        print("   {}".format(Seq_aa[i:i + 60]))
+                                        # if seq_ppb and len(seq_ppb)>0 :
                                         #    for i in range(0,len(seq_ppb),60):
                                         #        print("   {}".format(seq_ppb[i:i+60]))
                             if args.print_chain_full:
