@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 from tools import *
-
+import argparse
 
 def main():
     arg_parser = argparse.ArgumentParser(
@@ -21,6 +21,7 @@ def main():
                             help='File format: pdb, cif or auto')
 
     args = arg_parser.parse_args()
+
     if not args.pdb_warnings:
         warnings.simplefilter("ignore", PDBConstructionWarning)
 
@@ -38,7 +39,7 @@ def main():
                     for chain in model:
                         # seq_ppb = chain_sequence_ppbuild(chain)
                         chain_aa = chain_sequence_aaselect(chain)
-                        (seq_start, Seq_aa) = protein_one_letter_string(chain_aa)
+                        (seq_start, Seq_aa) = chain_one_letter_string(chain)
                         res_ins = res_insertions(chain_aa)
                         seq_water = chain_water(chain)
                         # len_aa, len_ppb, len_wat, len_ins = 0, 0, 0, 0
@@ -54,9 +55,7 @@ def main():
                             if chain_aa and len(chain_aa) > 0:
                                 for i in range(0, len(Seq_aa), 60):
                                     print("   {}".format(Seq_aa[i:i + 60]))
-                                    # if seq_ppb and len(seq_ppb)>0 :
-                                    #    for i in range(0,len(seq_ppb),60):
-                                    #        print("   {}".format(seq_ppb[i:i+60]))
+
                         if args.print_chain_full:
                             print("All residues in chain {}:".format(chain))
                             for residue in chain:

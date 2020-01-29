@@ -1,4 +1,4 @@
-import argparse
+
 import gzip
 import sys, os
 import warnings
@@ -7,6 +7,7 @@ from Bio.PDB.PDBExceptions import PDBConstructionWarning
 from Bio.PDB import *
 from Bio.Seq import Seq
 from Bio.Data import IUPACData
+import Bio.SVDSuperimposer
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
@@ -101,7 +102,7 @@ def res_oneletter(res):
     return rname1
 
 
-def protein_one_letter_string(res_list):
+def res_list_to_one_letter_string(res_list):
     if not res_list:
         return (0, "")
 
@@ -124,6 +125,11 @@ def protein_one_letter_string(res_list):
     return (sequence_start, Seq(seq))
 
 
+def chain_one_letter_string(chain):
+    res_list = chain_sequence_aaselect(chain)
+    return res_list_to_one_letter_string(res_list)
+
+
 def res_insertions(res_list):
     res_list_ins = [res for res in res_list if res.get_id()[2] != ' ']
     return res_list_ins
@@ -134,3 +140,75 @@ def chain_water(chain):
     res_list = chain.get_list()
     res_list_water = [res for res in res_list if res.get_id()[0] == 'W']
     return res_list_water
+
+
+def range_str_to_tuple(range_str):
+    if not range_str:
+        # Select all
+        return None
+    range_split = range_str.split('-')
+    if len(range_split) == 0:
+        # Select all
+        return None
+    elif len(range_split) == 1:
+        res_start = int(range_split[0])
+        res_finish = res_start
+    else:
+        res_start = int(range_split[0])
+        res_finish = int(range_split[1])
+    return (res_start, res_finish + 1)
+
+
+def select_aa_residue_range_from_chain(chain, range_tuple):
+    res_list_aa = chain_sequence_aaselect(chain)
+    if range_tuple:
+        res_selected = [res for res in res_list_aa
+                        if res.get_id()[1] >= range_tuple[0] and res.get_id()[1] < range_tuple[1]]
+    else:
+        res_selected = res_list_aa
+    return res_selected
+
+
+def atom_str_to_set(atom_str):
+    atom_set = set()
+    if not atom_str:
+        return atom_set
+    atom_list = atom_str.split(',')
+    for a in atom_list:
+        a = a.strip()
+        atom_set.add(a)
+    return atom_set
+
+
+def select_atoms_from_res_list(res_list, ref_atom_names_set):
+    atom_list = []
+    for r in res_list:
+        for a in r.get_list():
+            if ref_atom_names_set and a.get_name() in ref_atom_names_set:
+                atom_list.append(a)
+            if not ref_atom_names_set:
+                # set is empty, append all atoms
+                atom_list.append(a)
+    return atom_list
+
+
+def check_res_list_is_continuous(res_list):
+    prev_id = None
+    for r in res_list:
+        this_id = r.get_id()[1]  # residue number, may repeat o have gaps
+        if prev_id:
+            if not (this_id == prev_id or this_id == prev_id + 1 ):
+                return False
+        prev_id = this_id
+    return True
+
+def get_res_and_atoms(chain_res_aa, resno, ref_res_list_len, ref_atom_names_set):
+    try:
+        res_list_to_fit = chain_res_aa[resno : resno + ref_res_list_len]
+    except:
+        return (None, None)
+    if check_res_list_is_continuous(res_list_to_fit):
+        atom_list_to_fit = select_atoms_from_res_list(res_list_to_fit, ref_atom_names_set)
+        return (res_list_to_fit, atom_list_to_fit)
+    else:
+        return (None, None)
