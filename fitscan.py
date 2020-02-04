@@ -10,13 +10,15 @@ def main():
     arg_parser.add_argument('-p', '--print-header', action='store_true',
                             help='print header')
     arg_parser.add_argument('--ref-structure', type=str, help='Reference structure', required=True)
-    arg_parser.add_argument('--ref-chain', type=str, help='Chain in reference structure')
     arg_parser.add_argument('--ref-model', type=int, help='Model number in reference structure')
+    arg_parser.add_argument('--ref-chain', type=str, help='Chain in reference structure')
     arg_parser.add_argument('--ref-residues', type=str, help='Residue range in reference structure')
     arg_parser.add_argument('--ref-atoms', type=str, help='Atoms in reference structure',
                             default='N,CA,C,O')
     arg_parser.add_argument('-w', '--pdb-warnings', action='store_true',
                             help='show structure parsing warnings', default=False)
+    arg_parser.add_argument('-v', '--verbose', action='store_true',
+                            help='Verbose output', default=False)
     arg_parser.add_argument('--max-rms', type=float, help='Maximum RMSD to print, ingore otherwise', default=1.0)
     args = arg_parser.parse_args()
 
@@ -65,11 +67,12 @@ def main():
         ref_atom_names_set = set()
     ref_atoms = select_atoms_from_res_list(ref_res_list, ref_atom_names_set)
     print("{} atoms selected by filter \'{}\'".format(len(ref_atoms), ref_select_atoms_str))
-    for a in ref_atoms:
-        print(a.get_full_id())
+    if args.verbose:
+        for a in ref_atoms:
+            print(a.get_full_id())
 
     if not ref_atoms:
-        eprint("No atoms selected. Exiting")
+        eprint("No atoms selected in reference structure. Exiting")
         return(-1)
 
     ##############################
@@ -85,7 +88,7 @@ def main():
                 structure = get_structure_from_file(structf, format='auto')
                 if not structure:
                     continue
-                if args.print_header:
+                if args.print_header and args.verbose:
                     for key, value in sorted(structure.header.items()):
                         print("{:20} : {}".format(key, value))
                 for model in structure:
@@ -98,12 +101,13 @@ def main():
                         len_aa = 0 if not chain_res_aa else len(chain_res_aa)
                         len_aa_gaps = 0 if not chain_res_aa else len(Seq_aa)
                         len_water = 0 if not seq_water else len(seq_water)
-                        print("> {} model= {:2}, chain= {:1}, {:4} ({:4}) AA, start = {:4}, {:3} WAT".
-                              format(file_id, model.get_id(), chain.get_id(),
-                                     len_aa, len_aa_gaps, seq_start, len_water))
-                        if len_aa:
-                            for i in range(0, len(Seq_aa), 60):
-                                print("   {}".format(Seq_aa[i:i + 60]))
+                        if args.verbose:
+                            print("> {} model= {:2}, chain= {:1}, {:4} ({:4}) AA, start = {:4}, {:3} WAT".
+                                  format(file_id, model.get_id(), chain.get_id(),
+                                         len_aa, len_aa_gaps, seq_start, len_water))
+                            if len_aa:
+                                for i in range(0, len(Seq_aa), 60):
+                                    print("   {}".format(Seq_aa[i:i + 60]))
                         for resno in range(len_aa - ref_res_list_len):
                             (res_to_fit, atoms_to_fit) = get_res_and_atoms(chain_res_aa, resno, ref_res_list_len,
                                                              ref_atom_names_set)
@@ -111,8 +115,9 @@ def main():
                                 sup.set_atoms(ref_atoms, atoms_to_fit)
                                 if sup.rms <= args.max_rms:
                                     (r_start, r_seq) = res_list_to_one_letter_string(res_to_fit)
-                                    print("RMSD HIT: {} model={:2}, chain={:1} {:4>}-{} rmsd = {:>6.4f}".
-                                          format(file_id, model.get_id(), chain.get_id(), r_start, r_seq, sup.rms))
+                                    print("RMSD_HIT: {} model= {:>3}, chain= {:1} hit= {:>4}- {} -{:<4} rmsd= {:>6.4f}".
+                                          format(file_id, model.get_id(), chain.get_id(),
+                                                 r_start, r_seq, r_start + ref_res_list_len - 1, sup.rms))
 
             except FileNotFoundError:
                 eprint("Failed to read structure {}".format(structf))
