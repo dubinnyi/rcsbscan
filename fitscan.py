@@ -1,7 +1,8 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -u
 
 from tools import *
 import argparse
+import time
 
 def main():
     arg_parser = argparse.ArgumentParser(
@@ -81,6 +82,9 @@ def main():
 
     print("Start fit scan")
     sup = Superimposer()
+    t0 = time.time()
+    struct_count = 0
+    res_count = 0
     if args.struct:
         for structf in args.struct:
             try:
@@ -101,6 +105,7 @@ def main():
                         len_aa = 0 if not chain_res_aa else len(chain_res_aa)
                         len_aa_gaps = 0 if not chain_res_aa else len(Seq_aa)
                         len_water = 0 if not seq_water else len(seq_water)
+                        struct_count = struct_count + 1
                         if args.verbose:
                             print("> {} model= {:2}, chain= {:1}, {:4} ({:4}) AA, start = {:4}, {:3} WAT".
                                   format(file_id, model.get_id(), chain.get_id(),
@@ -112,6 +117,7 @@ def main():
                             (res_to_fit, atoms_to_fit) = get_res_and_atoms(chain_res_aa, resno, ref_res_list_len,
                                                              ref_atom_names_set)
                             if atoms_to_fit and len(atoms_to_fit) == len(ref_atoms):
+                                res_count = res_count + 1
                                 sup.set_atoms(ref_atoms, atoms_to_fit)
                                 if sup.rms <= args.max_rms:
                                     (r_start, r_seq) = res_list_to_one_letter_string(res_to_fit)
@@ -122,6 +128,9 @@ def main():
             except FileNotFoundError:
                 eprint("Failed to read structure {}".format(structf))
                 continue
+
+    print("fitscan finished after {:>4d} sec.".format(int(time.time() - t0)))
+    print("{} tuples of length {} in {} strucutures superimposed.".format(res_count, ref_res_list_len, struct_count))
 
 
 if __name__ == "__main__":
