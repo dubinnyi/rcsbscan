@@ -7,6 +7,7 @@ from Bio.PDB.PDBExceptions import PDBConstructionWarning
 from Bio.PDB import *
 from Bio.Seq import Seq
 from Bio.Data import IUPACData
+
 import Bio.SVDSuperimposer
 
 def eprint(*args, **kwargs):
