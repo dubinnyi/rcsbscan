@@ -1,7 +1,7 @@
 #!/usr/bin/python3 -u
 
 from tools import *
-from struct4fit import Struct4Fit
+from struct4fit import Struct4Fit, FitCounter
 import argparse
 import time
 
@@ -40,7 +40,11 @@ def main():
 
     print("Start fit scan")
 
-    s4fit.reset_timer()
+    CountTotal = FitCounter(s4fit.counter.name)
+    if args.verbose:
+        print(CountTotal)
+
+    s4fit.counter.timer_start()
     if args.struct:
         for structf in args.struct:
             try:
@@ -48,8 +52,17 @@ def main():
             except FileNotFoundError:
                 eprint("Failed to read structure {}".format(structf))
                 continue
+    s4fit.counter.timer_finish()
 
-    s4fit.print_stats()
+    if args.verbose:
+        print("s4fit counter:")
+        print(s4fit.counter)
+        print("CountTotal counter:")
+        print(CountTotal)
+
+    CountTotal = CountTotal + s4fit.counter
+    print("Overall statistics:")
+    print(CountTotal)
 
 
 if __name__ == "__main__":
