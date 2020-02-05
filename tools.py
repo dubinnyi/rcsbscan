@@ -2,6 +2,7 @@
 import gzip
 import sys, os
 import warnings
+import time
 from Bio.PDB.PDBExceptions import PDBConstructionWarning
 
 from Bio.PDB import *
