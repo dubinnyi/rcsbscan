@@ -2,8 +2,21 @@
 
 from tools import *
 from struct4fit import Struct4Fit, FitCounter
+
 import argparse
-import time
+
+
+def pool_fit_one(tuple_of_args):
+    (ref_struct, one_file, counter) = tuple_of_args
+    try:
+        counter.timer_start()
+        ref_struct.scan(one_file, counter)
+    except FileNotFoundError:
+        eprint("Failed to scan structure {}".format(one_file))
+        counter.new_error()
+    counter.timer_finish()
+    return counter
+
 
 def main():
     arg_parser = argparse.ArgumentParser(
@@ -21,6 +34,8 @@ def main():
                             help='show structure parsing warnings', default=False)
     arg_parser.add_argument('-v', '--verbose', action='store_true',
                             help='Verbose output', default=False)
+    arg_parser.add_argument('-r', '--recursive', action='store_true',
+                            help='Recursive search of structures in folders', default=False)
     arg_parser.add_argument('--max-rms', type=float, help='Maximum RMSD to print, ingore otherwise', default=1.0)
     args = arg_parser.parse_args()
 
@@ -30,7 +45,7 @@ def main():
     #ref_struct=get_structure_from_file(args.ref_structure)
 
     s4fit = Struct4Fit(args.ref_structure, args.ref_model, args.ref_chain,
-                       args.ref_residues,  args.ref_atoms, args.verbose)
+                       args.ref_residues,  args.ref_atoms, args.verbose, args.max_rms)
     if not s4fit:
         quit(-1)
 
@@ -40,29 +55,58 @@ def main():
 
     print("Start fit scan")
 
-    CountTotal = FitCounter(s4fit.counter.name)
+    CountTotal = FitCounter(s4fit.result_name)
     if args.verbose:
         print(CountTotal)
 
-    s4fit.counter.timer_start()
-    if args.struct:
-        for structf in args.struct:
-            try:
-                s4fit.scan(structf, args.max_rms)
-            except FileNotFoundError:
-                eprint("Failed to read structure {}".format(structf))
-                continue
-    s4fit.counter.timer_finish()
+    ncpu = mp.cpu_count()
+    pool = mp.Pool(ncpu)
 
-    if args.verbose:
-        print("s4fit counter:")
-        print(s4fit.counter)
-        print("CountTotal counter:")
-        print(CountTotal)
+    if not args.struct:
+        # Should not be here: nargs='+'
+        eprint("No structures selected. Exiting")
+        quit(-1)
 
-    CountTotal = CountTotal + s4fit.counter
+    if args.recursive:
+        struct_list = recursive_expand(args.struct)
+        print("Recursive expansion: {} -> {} structures".format(len(args.struct),len(struct_list)))
+    else:
+        struct_list = args.struct
+
+
+    nstruct = len(struct_list)
+    print("Prepare arguments for {} structures".format(nstruct))
+    all_args = [(s4fit, struct_list[i], FitCounter(s4fit.result_name))
+                for i in range(nstruct)]
+
+    print("Start map_async".format(nstruct))
+    walltime_start = time.monotonic()
+    async_result = pool.map_async(pool_fit_one, all_args)
+
+    print("map_async submitted {} tasks to Pool of {} cpu".format(nstruct, ncpu))
+    pool.close()
+    pool.join()
+    async_result.wait()
+    walltime_finish = time.monotonic()
+    print("Pool finished evaluation of {} tasks".format(nstruct))
+    result_counters = async_result.get()
+    # print("Results obtained".format(nstruct))
+    #for structf in args.struct:
+    #    try:
+    #        s4fit.scan(structf, c)
+    #    except FileNotFoundError:
+    #        eprint("Failed to read structure {}".format(structf))
+    #        continue
+
+    for rc in result_counters:
+        if args.verbose:
+            print(rc)
+        CountTotal = CountTotal + rc
+
     print("Overall statistics:")
     print(CountTotal)
+    walltime = walltime_finish - walltime_start
+    print("Evaluation time: {:8.2f}".format(walltime))
 
 
 if __name__ == "__main__":

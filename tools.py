@@ -11,8 +11,17 @@ from Bio.Data import IUPACData
 
 import Bio.SVDSuperimposer
 
+import multiprocessing as mp
+LOCK = mp.Lock()
+
 def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
+    with LOCK:
+        print(*args, file=sys.stderr, **kwargs)
+
+
+def mpprint(*args, **kwargs):
+    with LOCK:
+        print(*args, file=sys.stdout, **kwargs)
 
 
 def opengz(filename, args: 'r'):
@@ -214,5 +223,16 @@ def get_res_and_atoms(chain_res_aa, resno, ref_res_list_len, ref_atom_names_set)
         return (res_list_to_fit, atom_list_to_fit)
     else:
         return (None, None)
+
+
+def recursive_expand(list_of_files):
+    result = []
+    for f in list_of_files:
+        if os.path.isfile(f):
+            result.append(f)
+        elif os.path.isdir(f):
+            subdirs = [os.path.join(f,d) for d in os.listdir(f)]
+            result.extend(recursive_expand(subdirs))
+    return result
 
 

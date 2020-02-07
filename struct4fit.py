@@ -27,6 +27,7 @@ class FitCounter:
         self.count_struct = 0
         self.count_res_tuple = 0
         self.count_hits = 0
+        self.count_errors = 0
         self.timer_start()
 
     def new_file(self):
@@ -41,6 +42,9 @@ class FitCounter:
     def new_hit(self):
         self.count_hits = self.count_hits + 1
 
+    def new_error(self):
+        self.count_errors = self.count_errors + 1
+
     def __str__(self):
         out = []
         out.append("fitscan statistics after {:>4d} sec:".format(int(self.total_time)))
@@ -48,6 +52,7 @@ class FitCounter:
         out.append("  {:>7} structures".format(self.count_struct))
         out.append("  {:>7} hits".format(self.count_hits))
         out.append("  {:>7} {}".format(self.count_res_tuple, self.name))
+        out.append("  {:>7} errors".format(self.count_errors))
         return "\n".join(out)
 
     def print_stats(self):
@@ -55,21 +60,24 @@ class FitCounter:
         print(str(self))
 
     def __add__(self, counter):
-        self.total_time =      self.total_time +      counter.total_time
-        self.count_files =     self.count_files +     counter.count_files
-        self.count_struct =    self.count_struct +    counter.count_struct
-        self.count_res_tuple = self.count_res_tuple + counter.count_res_tuple
-        self.count_hits =      self.count_hits +      counter.count_hits
-        return self
+        ret = FitCounter(self.name)
+        ret.total_time =      self.total_time +      counter.total_time
+        ret.count_files =     self.count_files +     counter.count_files
+        ret.count_struct =    self.count_struct +    counter.count_struct
+        ret.count_res_tuple = self.count_res_tuple + counter.count_res_tuple
+        ret.count_hits =      self.count_hits +      counter.count_hits
+        ret.count_errors =    self.count_errors +    counter.count_errors
+        return ret
 
 
 
 class Struct4Fit:
-    def __init__(self, struct, model, chain, residues, atoms, verbose):
+    def __init__(self, struct, model, chain, residues, atoms, verbose, max_rms):
         self.ok_flag = False
         self.verbose = verbose
         self.struct = get_structure_from_file(struct)
         self.sup = Superimposer()
+        self.max_rms = max_rms
         if self.struct:
 
             # Select model
@@ -131,20 +139,26 @@ class Struct4Fit:
                 eprint("No atoms selected in reference structure. Exiting")
             else:
                 self.ok_flag = True
-                print("REF_4FIT: {} model= {:>3}, chain= {:1} seq= {:>4} {} {:<4} atoms={} fit_atoms={}".
-                      format(self.struct.get_id(), self.model, self.ref_ch_name,
-                      self.ref_seq_start, self.ref_seq, self.ref_seq_end, self.ref_select_atoms_str,
-                             len(self.ref_atoms)))
-        self.counter = FitCounter("{}-length tuples of residues".format(self.ref_res_list_len))
-        self.counter.counters_reset()
+                self.info = "REF_4FIT: {} model= {:>3}, chain= {:1} seq= {:>4} {} {:<4} "
+                self.info = self.info + "atoms={} fit_atoms={} max_rms={:>6.4f}"
+                self.info = self.info.format(self.struct.get_id(), self.model, self.ref_ch_name,
+                             self.ref_seq_start, self.ref_seq, self.ref_seq_end, self.ref_select_atoms_str,
+                             len(self.ref_atoms), self.max_rms)
+                print(self.info)
+                self.result_name = "tuples of {} residues superimposed and rms of atoms {} evaluated".format(
+                            self.ref_res_list_len, self.ref_select_atoms_str, self.max_rms)
+
+        #self.counter = FitCounter("{}-length tuples of residues".format(self.ref_res_list_len))
+        #self.counter.counters_reset()
 
 
-    def scan(self, structf, max_rms):
+    def scan(self, structf, counter):
         (file_id, format) = parse_structure_filename(structf)
         structure = get_structure_from_file(structf, format='auto')
         if not structure:
             return
-        self.counter.new_file()
+        counter.name = "{}-length tuples of residues".format(self.ref_res_list_len)
+        counter.new_file()
         if self.verbose:
             for key, value in sorted(structure.header.items()):
                 print("{:20} : {}".format(key, value))
@@ -153,29 +167,27 @@ class Struct4Fit:
                 chain_res_aa = chain_sequence_aaselect(chain)
                 (seq_start, Seq_aa) = chain_one_letter_string(chain)
                 seq_water = chain_water(chain)
-                # len_aa, len_ppb, len_wat, len_ins = 0, 0, 0, 0
-                # len_ppb = 0 if not seq_ppb else len(seq_ppb)
                 len_aa = 0 if not chain_res_aa else len(chain_res_aa)
                 len_aa_gaps = 0 if not chain_res_aa else len(Seq_aa)
                 len_water = 0 if not seq_water else len(seq_water)
-                self.counter.new_struct()
+                counter.new_struct()
                 if self.verbose:
-                    print("> {} model= {:2}, chain= {:1}, {:4} ({:4}) AA, start = {:4}, {:3} WAT".
+                    mpprint("> {} model= {:2}, chain= {:1}, {:4} ({:4}) AA, start = {:4}, {:3} WAT".
                           format(file_id, model.get_id(), chain.get_id(),
                                  len_aa, len_aa_gaps, seq_start, len_water))
                     if len_aa:
                         for i in range(0, len(Seq_aa), 60):
-                            print("   {}".format(Seq_aa[i:i + 60]))
+                            mpprint("   {}".format(Seq_aa[i:i + 60]))
                 for resno in range(len_aa - self.ref_res_list_len):
                     (res_to_fit, atoms_to_fit) = get_res_and_atoms(chain_res_aa, resno, self.ref_res_list_len,
                                                                    self.ref_atom_names_set)
                     if atoms_to_fit and len(atoms_to_fit) == len(self.ref_atoms):
-                        self.counter.new_res_tuple()
+                        counter.new_res_tuple()
                         self.sup.set_atoms(self.ref_atoms, atoms_to_fit)
-                        if self.sup.rms <= max_rms:
-                            self.counter.new_hit()
+                        if self.sup.rms <= self.max_rms:
+                            counter.new_hit()
                             (r_start, r_seq) = res_list_to_one_letter_string(res_to_fit)
-                            print("RMSD_HIT: {} model= {:>3}, chain= {:1} hit= {:>4} {} {:<4} rmsd= {:>6.4f}".
+                            mpprint("RMSD_HIT: {} model= {:>3}, chain= {:1} hit= {:>4} {} {:<4} rms= {:>6.4f}".
                                   format(file_id, model.get_id(), chain.get_id(),
                                          r_start, r_seq, r_start + self.ref_res_list_len - 1, self.sup.rms))
 
