@@ -72,31 +72,39 @@ class FitCounter:
 
 
 class Struct4Fit:
-    def __init__(self, struct, model, chain, residues, atoms, verbose, max_rms):
+    def __init__(self, struct_file, model, chain, residues, atoms, verbose, max_rms):
         self.ok_flag = False
         self.verbose = verbose
-        self.struct = get_structure_from_file(struct)
+        self.struct = get_structure_from_file(struct_file)
         self.sup = Superimposer()
         self.max_rms = max_rms
+
         if self.struct:
 
             # Select model
-            if model:
-                self.model = model
-                self.ref_mdl = self.struct[model]
-            else:
-                self.model = 0
-                self.ref_mdl = self.struct[0]
+            try:
+                if model:
+                    self.model = model
+                else:
+                    self.model = 0
+                self.ref_mdl = self.struct[self.model]
+            except:
+                eprint("Could not get model '{}' from file '{}'".format(model, struct_file))
+                return
 
             # Select chain
-            if chain:
-                self.ref_ch_name = chain
-            else:
-                chain_id_list = [ch.get_id() for ch in self.ref_mdl.get_list()]
-                self.ref_ch_name = chain_id_list[0]
-                if self.verbose:
-                    print("Automatically select first chain: \'{}\'".format(self.ref_ch_name))
-            self.ref_ch = self.ref_mdl[self.ref_ch_name]
+            try:
+                if chain:
+                    self.ref_ch_name = chain
+                else:
+                    chain_id_list = [ch.get_id() for ch in self.ref_mdl.get_list()]
+                    self.ref_ch_name = chain_id_list[0]
+                    if self.verbose:
+                        print("Automatically select first chain: \'{}\'".format(self.ref_ch_name))
+                self.ref_ch = self.ref_mdl[self.ref_ch_name]
+            except:
+                eprint("Could not get chain '{}' from model '{}' in file '{}'".format(chain, self.model, struct_file))
+                return
 
             (seq_start, Seq_aa) = chain_one_letter_string(self.ref_ch)
             if self.verbose:
@@ -104,12 +112,22 @@ class Struct4Fit:
                 for i in range(0, len(Seq_aa), 60):
                     print("   {}".format(Seq_aa[i:i + 60]))
 
-            if residues:
-                res_range_tuple = range_str_to_tuple(residues)
-            else:
-                res_range_tuple = None  # Select all
-            self.ref_res_list = select_aa_residue_range_from_chain(self.ref_ch, res_range_tuple)
-            self.ref_res_list_len = len(self.ref_res_list)
+            # Select residues
+            try:
+                if residues:
+                    self.res_range_tuple = range_str_to_tuple(residues)
+                else:
+                    self.res_range_tuple = None  # Select all
+                if self.res_range_tuple:
+                    self.res_range_str = "{}-{}".format(self.res_range_tuple[0], self.res_range_tuple[1]-1)
+                else:
+                    self.res_range_str = "All"
+                self.ref_res_list = select_aa_residue_range_from_chain(self.ref_ch, self.res_range_tuple)
+                self.ref_res_list_len = len(self.ref_res_list)
+            except:
+                eprint("Could not get residues '{}' from chain '{}' of model '{}' in file '{}'".
+                       format(residues, self.ref_ch_name, self.model, struct_file))
+                return
 
             (seq2_start, Seq2_aa) = res_list_to_one_letter_string(self.ref_res_list)
             self.ref_seq = Seq2_aa
@@ -123,30 +141,35 @@ class Struct4Fit:
                 print("{} residues selected from chain \'{}\'".format(self.ref_seq_len, self.ref_ch_name))
                 print("\n".join(self.ref_seq_formatted_60))
 
-            if atoms:
-                self.ref_select_atoms_str = atoms
-                self.ref_atom_names_set = atom_str_to_set(self.ref_select_atoms_str)
-            else:
-                self.ref_select_atoms_str = ''
-                self.ref_atom_names_set = set()
-            self.ref_atoms = select_atoms_from_res_list(self.ref_res_list, self.ref_atom_names_set)
-            if self.verbose:
-                print("{} atoms selected by filter \'{}\'".format(len(self.ref_atoms), self.ref_select_atoms_str))
-                for a in self.ref_atoms:
-                    print(a.get_full_id())
+            # Select atoms
+            try:
+                if atoms:
+                    self.ref_select_atoms_str = atoms
+                    self.ref_atom_names_set = atom_str_to_set(self.ref_select_atoms_str)
+                else:
+                    self.ref_select_atoms_str = '*'
+                    self.ref_atom_names_set = set() # Select all atoms
+                self.ref_atoms = select_atoms_from_res_list(self.ref_res_list, self.ref_atom_names_set)
+                if self.verbose:
+                    print("{} atoms selected by filter \'{}\'".format(len(self.ref_atoms), self.ref_select_atoms_str))
+                    for a in self.ref_atoms:
+                        print(a.get_full_id())
+            except:
+                eprint("No atoms selected in reference structure:")
+                eprint("Could not find atoms '{}' in residues '{}' from chain '{}' of model '{}' in file '{}'".
+                       format(self.ref_select_atoms_str, self.res_range_str, self.ref_ch_name, self.model, struct_file))
+                return
 
-            if not self.ref_atoms:
-                eprint("No atoms selected in reference structure. Exiting")
-            else:
-                self.ok_flag = True
-                self.info = "REF_4FIT: {} model= {:>3}, chain= {:1} seq= {:>4} {} {:<4} "
-                self.info = self.info + "atoms={} fit_atoms={} max_rms={:>6.4f}"
-                self.info = self.info.format(self.struct.get_id(), self.model, self.ref_ch_name,
-                             self.ref_seq_start, self.ref_seq, self.ref_seq_end, self.ref_select_atoms_str,
-                             len(self.ref_atoms), self.max_rms)
-                print(self.info)
-                self.result_name = "tuples of {} residues superimposed and rms of atoms {} evaluated".format(
-                            self.ref_res_list_len, self.ref_select_atoms_str, self.max_rms)
+            # Success: some atoms selected
+            self.ok_flag = True
+            self.info = "REF_4FIT: {} model= {:>3}, chain= {:1} seq= {:>4} {} {:<4} "
+            self.info = self.info + "atoms={} fit_atoms={} max_rms={:>6.4f}"
+            self.info = self.info.format(self.struct.get_id(), self.model, self.ref_ch_name,
+                                         self.ref_seq_start, self.ref_seq, self.ref_seq_end, self.ref_select_atoms_str,
+                                         len(self.ref_atoms), self.max_rms)
+            print(self.info)
+            self.result_name = "tuples of {} residues superimposed and rms of atoms {} evaluated".format(
+                self.ref_res_list_len, self.ref_select_atoms_str, self.max_rms)
 
         #self.counter = FitCounter("{}-length tuples of residues".format(self.ref_res_list_len))
         #self.counter.counters_reset()

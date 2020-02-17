@@ -154,7 +154,7 @@ def chain_water(chain):
 
 
 def range_str_to_tuple(range_str):
-    if not range_str:
+    if not range_str or range_str == '*' or range_str == '.' or range_str.upper() == 'ALL':
         # Select all
         return None
     range_split = range_str.split('-')
@@ -175,6 +175,8 @@ def select_aa_residue_range_from_chain(chain, range_tuple):
     if range_tuple:
         res_selected = [res for res in res_list_aa
                         if res.get_id()[1] >= range_tuple[0] and res.get_id()[1] < range_tuple[1]]
+        if not res_selected:
+            raise IndexError("list index '{}' is out of range".format(range_tuple))
     else:
         res_selected = res_list_aa
     return res_selected
@@ -182,7 +184,7 @@ def select_aa_residue_range_from_chain(chain, range_tuple):
 
 def atom_str_to_set(atom_str):
     atom_set = set()
-    if not atom_str:
+    if not atom_str or atom_str == '*' or atom_str == '.' or atom_str.upper() == 'ALL':
         return atom_set
     atom_list = atom_str.split(',')
     for a in atom_list:
@@ -200,6 +202,8 @@ def select_atoms_from_res_list(res_list, ref_atom_names_set):
             if not ref_atom_names_set:
                 # set is empty, append all atoms
                 atom_list.append(a)
+    if ref_atom_names_set and not atom_list:
+        raise IndexError("Atoms not present in structure")
     return atom_list
 
 
