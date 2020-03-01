@@ -187,32 +187,41 @@ class Struct4Fit:
                 print("{:20} : {}".format(key, value))
         for model in structure:
             for chain in model:
-                chain_res_aa = chain_sequence_aaselect(chain)
-                (seq_start, Seq_aa) = chain_one_letter_string(chain)
-                seq_water = chain_water(chain)
-                len_aa = 0 if not chain_res_aa else len(chain_res_aa)
-                len_aa_gaps = 0 if not chain_res_aa else len(Seq_aa)
-                len_water = 0 if not seq_water else len(seq_water)
-                counter.new_struct()
-                if self.verbose:
-                    mpprint("> {} model= {:2}, chain= {:1}, {:4} ({:4}) AA, start = {:4}, {:3} WAT".
-                          format(file_id, model.get_id(), chain.get_id(),
+                try:
+                    chain_res_aa = chain_sequence_aaselect(chain)
+                    (seq_start, Seq_aa) = chain_one_letter_string(chain)
+                    seq_water = chain_water(chain)
+                    len_aa = 0 if not chain_res_aa else len(chain_res_aa)
+                    len_aa_gaps = 0 if not chain_res_aa else len(Seq_aa)
+                    len_water = 0 if not seq_water else len(seq_water)
+                    counter.new_struct()
+                    if self.verbose:
+                        mpprint("> {} model= {:2}, chain= {:1}, {:4} ({:4}) AA, start = {:4}, {:3} WAT".
+                            format(file_id, model.get_id(), chain.get_id(),
                                  len_aa, len_aa_gaps, seq_start, len_water))
-                    if len_aa:
-                        for i in range(0, len(Seq_aa), 60):
-                            mpprint("   {}".format(Seq_aa[i:i + 60]))
-                for resno in range(len_aa - self.ref_res_list_len):
-                    (res_to_fit, atoms_to_fit) = get_res_and_atoms(chain_res_aa, resno, self.ref_res_list_len,
+                        if len_aa:
+                            for i in range(0, len(Seq_aa), 60):
+                                mpprint("   {}".format(Seq_aa[i:i + 60]))
+                    if len_aa < self.ref_res_list_len:
+                        continue
+                    for resno in range(len_aa - self.ref_res_list_len):
+                        (res_to_fit, atoms_to_fit) = get_res_and_atoms(chain_res_aa, resno, self.ref_res_list_len,
                                                                    self.ref_atom_names_set)
-                    if atoms_to_fit and len(atoms_to_fit) == len(self.ref_atoms):
-                        counter.new_res_tuple()
-                        self.sup.set_atoms(self.ref_atoms, atoms_to_fit)
-                        if self.sup.rms <= self.max_rms:
-                            counter.new_hit()
-                            (r_start, r_seq) = res_list_to_one_letter_string(res_to_fit)
-                            mpprint("RMSD_HIT: {} model= {:>3}, chain= {:1} hit= {:>4} {} {:<4} rms= {:>6.4f}".
-                                  format(file_id, model.get_id(), chain.get_id(),
-                                         r_start, r_seq, r_start + self.ref_res_list_len - 1, self.sup.rms))
+                        if atoms_to_fit and len(atoms_to_fit) == len(self.ref_atoms):
+                            counter.new_res_tuple()
+                            self.sup.set_atoms(self.ref_atoms, atoms_to_fit)
+                            if self.sup.rms <= self.max_rms:
+                                counter.new_hit()
+                                (r_start, r_seq) = res_list_to_one_letter_string(res_to_fit)
+                                mpprint("RMSD_HIT: {} model= {:>3}, chain= {:1} hit= {:>4} {} {:<4} rms= {:>6.4f}".
+                                    format(file_id, model.get_id(), chain.get_id(),
+                                           r_start, r_seq, r_start + self.ref_res_list_len - 1, self.sup.rms))
+                except IndexError as e:
+                    if self.verbose:
+                        eprint("Error in struct= {}, model= {}, chain= {}: {}".format(
+                               file_id, model.get_id(), chain.get_id(), e))
+                    counter.new_error()
+                    continue
 
     def __bool__(self):
         return(self.ok_flag)
