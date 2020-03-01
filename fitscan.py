@@ -37,6 +37,8 @@ def main():
     arg_parser.add_argument('-r', '--recursive', action='store_true',
                             help='Recursive search of structures in folders', default=False)
     arg_parser.add_argument('--max-rms', type=float, help='Maximum RMSD to print, ingore otherwise', default=1.0)
+    arg_parser.add_argument('--water', type=str, help='Water molecule to scan (residue number)')
+    arg_parser.add_argument('--water-max-rms', type=float, help='Max rms for water match', default=2.0)
     args = arg_parser.parse_args()
 
     if not args.pdb_warnings:
@@ -45,7 +47,7 @@ def main():
     #ref_struct=get_structure_from_file(args.ref_structure)
 
     s4fit = Struct4Fit(args.ref_structure, args.ref_model, args.ref_chain,
-                       args.ref_residues,  args.ref_atoms, args.verbose, args.max_rms)
+                       args.ref_residues,  args.ref_atoms, args.verbose, args.max_rms, args.water)
     if not s4fit:
         quit(-1)
 

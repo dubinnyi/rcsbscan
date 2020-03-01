@@ -1,4 +1,5 @@
 #!/usr/bin/python3 -u
+from typing import Optional, Any
 
 from tools import *
 
@@ -72,12 +73,15 @@ class FitCounter:
 
 
 class Struct4Fit:
-    def __init__(self, struct_file, model, chain, residues, atoms, verbose, max_rms):
+
+    def __init__(self, struct_file, model, chain, residues, atoms, verbose, max_rms, water_id):
         self.ok_flag = False
         self.verbose = verbose
         self.struct = get_structure_from_file(struct_file)
         self.sup = Superimposer()
         self.max_rms = max_rms
+        self.water_id = None if not water_id else water_id
+        self.water_vector = None
 
         if self.struct:
 
@@ -159,6 +163,29 @@ class Struct4Fit:
                 eprint("Could not find atoms '{}' in residues '{}' from chain '{}' of model '{}' in file '{}'".
                        format(self.ref_select_atoms_str, self.res_range_str, self.ref_ch_name, self.model, struct_file))
                 return
+
+            # Select water
+            try:
+                if self.water_id:
+                    water_reslist = chain_water(self.ref_ch)
+                    res_water_id=int(self.water_id)
+                    water_res = [res for res in water_reslist if res.get_id()[1] == res_water_id]
+                    if water_res:
+                        water = water_res[0]
+                        water_atoms_o = set('O')
+                        water_atoms = select_atoms_from_res_list([water], water_atoms_o)
+                        if water_atoms:
+                            self.water_vector = water_atoms[0].get_vector()
+                            print("Water {} selected by {}".format(water.get_id(), self.water_id))
+                            print("Water coordinates: {}".format(self.water_vector))
+                        else:
+                            eprint("Coorinated of water molecule '{}' not found".format(self.water_id))
+                    else:
+                        eprint("Water molecule '{}' not found".format(self.water_id))
+            except:
+                eprint("Can't select water molecule {}".format(self.water_id))
+                return
+
 
             # Success: some atoms selected
             self.ok_flag = True
