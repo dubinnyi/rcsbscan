@@ -47,9 +47,15 @@ def main():
     #ref_struct=get_structure_from_file(args.ref_structure)
 
     s4fit = Struct4Fit(args.ref_structure, args.ref_model, args.ref_chain,
-                       args.ref_residues,  args.ref_atoms, args.verbose, args.max_rms, args.water)
+                       args.ref_residues,  args.ref_atoms, args.verbose, args.max_rms)
+
+    if args.water:
+        s4fit.set_water(args.water, args.water_max_rms)
+
     if not s4fit:
         quit(-1)
+
+    print(str(s4fit))
 
     ##############################
     #  Start fit scan
