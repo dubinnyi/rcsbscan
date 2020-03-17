@@ -86,6 +86,10 @@ class Struct4Fit:
         self.water_atoms = []
         self.water_vector = None
 
+        self.out_filename = None
+        self.out_filehandle = None
+        self.pdbio = None
+
         if self.struct:
 
             # Select model
@@ -188,7 +192,7 @@ class Struct4Fit:
         # Select water
         try:
             if self.water_id:
-                # TODO: Support for multiple water molecules
+                # TODO: Support for multiple water molecules (?)
                 water_reslist = chain_water(self.ref_ch)
                 res_water_id = int(self.water_id)
                 water_res = [res for res in water_reslist if res.get_id()[1] == res_water_id]
@@ -210,6 +214,14 @@ class Struct4Fit:
 
         if self.water_vector:
             self.info += " WAT= {:<4}".format(self.water_id)
+
+    def set_write(self, filename):
+        self.set_outfilename = filename
+        out_filehandle = open(filename, 'w')
+        out_filehandle.write('')
+        out_filehandle.close()
+        self.info += "\nSaving PDB HITS to \'{}\'".format(self.set_outfilename)
+        #self.pdbio = PDBIO(True)
 
     def __str__(self):
         return self.info
@@ -275,6 +287,12 @@ class Struct4Fit:
                                     format(file_id, model.get_id(), chain.get_id(),
                                            r_start, r_seq, r_start + self.ref_res_list_len - 1, self.sup.rms,
                                            water_match_str))
+                                if self.out_filename:
+                                    with LOCK:
+                                        with open(self.out_filename, 'a') as out_pdb:
+                                            pdbio = PDBIO(True)
+                                            pdbio.set_structure(structure)
+                                            pdbio.save(out_pdb)
                 except IndexError as e:
                     if self.verbose:
                         eprint("Error in struct= {}, model= {}, chain= {}: {}".format(

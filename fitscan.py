@@ -39,6 +39,7 @@ def main():
     arg_parser.add_argument('--max-rms', type=float, help='Maximum RMSD to print, ingore otherwise', default=1.0)
     arg_parser.add_argument('--water', type=str, help='Water molecule to scan (residue number)')
     arg_parser.add_argument('--water-max-rms', type=float, help='Max rms for water match', default=2.0)
+    arg_parser.add_argument('--save-pdb-hits', type=str, help='Save pdb hits to file', default = None)
     args = arg_parser.parse_args()
 
     if not args.pdb_warnings:
@@ -54,6 +55,10 @@ def main():
 
     if not s4fit:
         quit(-1)
+
+    print("save pdb hits: {}".format(args.save_pdb_hits))
+    if args.save_pdb_hits:
+        s4fit.set_write(args.save_pdb_hits)
 
     print(str(s4fit))
 
@@ -75,6 +80,8 @@ def main():
         eprint("No structures selected. Exiting")
         quit(-1)
 
+    print("struct list: {}".format(args.struct))
+
     if args.recursive:
         struct_list = recursive_expand(args.struct)
         print("Recursive expansion: {} -> {} structures".format(len(args.struct),len(struct_list)))
@@ -83,6 +90,8 @@ def main():
 
 
     nstruct = len(struct_list)
+    print("nstruct: {}".format(nstruct))
+
     print("Prepare arguments for {} structures".format(nstruct))
     all_args = [(s4fit, struct_list[i], FitCounter(s4fit.result_name))
                 for i in range(nstruct)]
