@@ -2,6 +2,7 @@
 from typing import Optional, Any
 
 from tools import *
+from collections import namedtuple
 
 class FitCounter:
     def __init__(self, name):
@@ -70,6 +71,26 @@ class FitCounter:
         ret.count_errors =    self.count_errors +    counter.count_errors
         return ret
 
+
+class RMSD_Hit(namedtuple('RMSD_Hit', ['pdb', 'chain', 'model', 'res_start', 'res_end', 'hit_sequence', 'rmsd'])):
+    def __str__(self):
+        out = "RMSD_HIT: {} model= {:>3}, chain= {:1} hit= {:>4} {} {:<4} rms= {:>6.4f}"
+        out = out.format(self.pdb, self.model, self.chain,
+               self.res_start, self.hit_sequence, self.res_end, self.rmsd)
+        return out
+
+
+class Water_Hit(namedtuple('Water_Hit', ['water_id', 'water_rms'])):
+    def __init__(self):
+        self.water_id = None
+        self.water_rms = None
+
+    def __str__(self):
+        str = ""
+        if self.water_id and self.water_rms:
+            str = "WAT= {:4} wat_rms= {:>6.4f}"
+            str.format(format(self.water_id, self.water_rms))
+        return str
 
 
 class Struct4Fit:
@@ -216,11 +237,11 @@ class Struct4Fit:
             self.info += " WAT= {:<4}".format(self.water_id)
 
     def set_write(self, filename):
-        self.set_outfilename = filename
-        out_filehandle = open(filename, 'w')
+        self.out_filename = filename
+        out_filehandle = open(self.out_filename, 'w')
         out_filehandle.write('')
         out_filehandle.close()
-        self.info += "\nSaving PDB HITS to \'{}\'".format(self.set_outfilename)
+        self.info += "\nSaving PDB HITS to \'{}\'".format(self.out_filename)
         #self.pdbio = PDBIO(True)
 
     def __str__(self):
@@ -283,16 +304,17 @@ class Struct4Fit:
                                             water_match_str = "WAT= {:4} wat_rms= {:>6.4f}".format(water_match_id, water_rms)
                                 counter.new_hit()
                                 (r_start, r_seq) = res_list_to_one_letter_string(res_to_fit)
-                                mpprint("RMSD_HIT: {} model= {:>3}, chain= {:1} hit= {:>4} {} {:<4} rms= {:>6.4f} {}".
-                                    format(file_id, model.get_id(), chain.get_id(),
-                                           r_start, r_seq, r_start + self.ref_res_list_len - 1, self.sup.rms,
-                                           water_match_str))
+                                hit = RMSD_Hit(file_id, model.get_id(), chain.get_id(),
+                                               r_start, r_start + self.ref_res_list_len - 1, str(r_seq), self.sup.rms)
+                                mpprint("{} {}".format(hit, water_match_str))
                                 if self.out_filename:
                                     with LOCK:
                                         with open(self.out_filename, 'a') as out_pdb:
                                             pdbio = PDBIO(True)
                                             pdbio.set_structure(structure)
-                                            pdbio.save(out_pdb)
+                                            pdbio.save(out_pdb, write_end=False)
+                                            out_pdb.flush()
+                                            out_pdb.close()
                 except IndexError as e:
                     if self.verbose:
                         eprint("Error in struct= {}, model= {}, chain= {}: {}".format(
