@@ -93,6 +93,18 @@ class Water_Hit(namedtuple('Water_Hit', ['water_id', 'water_rms'])):
         return str
 
 
+class Hit_Select(Select):
+    def __init__(self, hit):
+        self.hit = hit
+
+    def accept_residue(self, residue):
+        r =  residue.get_id()[1]
+        if r >= self.hit.res_start and r <= self.hit.res_end:
+            return 1
+        else:
+            return 0
+
+
 class Struct4Fit:
 
     def __init__(self, struct_file, model, chain, residues, atoms, verbose, max_rms):
@@ -312,7 +324,7 @@ class Struct4Fit:
                                         with open(self.out_filename, 'a') as out_pdb:
                                             pdbio = PDBIO(True)
                                             pdbio.set_structure(structure)
-                                            pdbio.save(out_pdb, write_end=False)
+                                            pdbio.save(out_pdb, select = Hit_Select(hit), write_end = False)
                                             out_pdb.flush()
                                             out_pdb.close()
                 except IndexError as e:
