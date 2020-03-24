@@ -98,8 +98,15 @@ class Hit_Select(Select):
         self.hit = hit
 
     def accept_residue(self, residue):
-        r =  residue.get_id()[1]
-        if r >= self.hit.res_start and r <= self.hit.res_end:
+        res_number =  residue.get_id()[1]
+        if res_number >= self.hit.res_start and res_number <= self.hit.res_end:
+            return 1
+        else:
+            return 0
+
+    def accept_chain(self, chain):
+        ch =  chain.get_id()
+        if ch == self.hit.chain:
             return 1
         else:
             return 0
@@ -296,6 +303,9 @@ class Struct4Fit:
                             #print(atoms_to_fit)
                             self.sup.set_atoms(self.ref_atoms, atoms_to_fit)
                             if self.sup.rms <= self.max_rms:
+                                # apply rotation to all atoms in pdb hit
+                                all_hit_atoms = select_atoms_from_res_list(res_to_fit, set())
+                                self.sup.apply(all_hit_atoms)
                                 # check water match
                                 water_match_str = ""
                                 if self.water_vector:
@@ -316,15 +326,16 @@ class Struct4Fit:
                                             water_match_str = "WAT= {:4} wat_rms= {:>6.4f}".format(water_match_id, water_rms)
                                 counter.new_hit()
                                 (r_start, r_seq) = res_list_to_one_letter_string(res_to_fit)
-                                hit = RMSD_Hit(file_id, model.get_id(), chain.get_id(),
+                                hit = RMSD_Hit(file_id, chain.get_id(), model.get_id(),
                                                r_start, r_start + self.ref_res_list_len - 1, str(r_seq), self.sup.rms)
                                 mpprint("{} {}".format(hit, water_match_str))
                                 if self.out_filename:
                                     with LOCK:
                                         with open(self.out_filename, 'a') as out_pdb:
+                                            out_pdb.write("REMARK 777 {} {}\n".format(hit, water_match_str))
                                             pdbio = PDBIO(True)
                                             pdbio.set_structure(structure)
-                                            pdbio.save(out_pdb, select = Hit_Select(hit), write_end = False)
+                                            pdbio.save(out_pdb, select = Hit_Select(hit), write_end = True)
                                             out_pdb.flush()
                                             out_pdb.close()
                 except IndexError as e:
