@@ -111,6 +111,14 @@ class Hit_Select(Select):
         else:
             return 0
 
+    def accept_model(self, model):
+        return 1
+#        mdl =  model.get_id()
+#        if mdl == self.hit.model:
+#            return 1
+#        else:
+#            return 0
+
 
 class Struct4Fit:
 
@@ -333,6 +341,12 @@ class Struct4Fit:
                                     with LOCK:
                                         with open(self.out_filename, 'a') as out_pdb:
                                             out_pdb.write("REMARK 777 {} {}\n".format(hit, water_match_str))
+                                            for (res_new, res_old) in zip(range(self.ref_seq_len), res_to_fit):
+                                                ro = res_old
+                                                rn = res_new
+                                                #ro.id(('', rn + 1, ''))
+                                            #hit.res_start = 1
+                                            #hit.res_end = self.ref_seq_len + 1
                                             pdbio = PDBIO(True)
                                             pdbio.set_structure(structure)
                                             pdbio.save(out_pdb, select = Hit_Select(hit), write_end = True)

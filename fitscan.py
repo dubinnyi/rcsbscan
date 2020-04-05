@@ -40,6 +40,8 @@ def main():
     arg_parser.add_argument('--water', type=str, help='Water molecule to scan (residue number)')
     arg_parser.add_argument('--water-max-rms', type=float, help='Max rms for water match', default=2.0)
     arg_parser.add_argument('--save-pdb-hits', type=str, help='Save pdb hits to file', default = None)
+    arg_parser.add_argument('--renumber-pdb', action='store_true',
+                            help='Renumber residues in pdb hits', default=False)
     args = arg_parser.parse_args()
 
     if not args.pdb_warnings:
