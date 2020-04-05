@@ -73,7 +73,6 @@ def get_structure_from_file(filename, **kwargs):
         parsers = [pdb_parser, cif_parser]
     else:
         parsers = [cif_parser, pdb_parser]
-    structure = None
     for parser in parsers:
         try:
             with opengz(filename, 'r') as handle:

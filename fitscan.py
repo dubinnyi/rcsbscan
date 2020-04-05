@@ -42,6 +42,8 @@ def main():
     arg_parser.add_argument('--save-pdb-hits', type=str, help='Save pdb hits to file', default = None)
     arg_parser.add_argument('--renumber-pdb', action='store_true',
                             help='Renumber residues in pdb hits', default=False)
+    arg_parser.add_argument('--xray-res', type = float,
+                            help='Maximal resolution of X-ray structures')
     args = arg_parser.parse_args()
 
     if not args.pdb_warnings:
@@ -61,6 +63,9 @@ def main():
     print("save pdb hits: {}".format(args.save_pdb_hits))
     if args.save_pdb_hits:
         s4fit.set_write(args.save_pdb_hits)
+
+    if args.xray_res:
+        s4fit.set_Xray(args.xray_res)
 
     print(str(s4fit))
 

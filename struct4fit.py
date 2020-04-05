@@ -137,6 +137,7 @@ class Struct4Fit:
         self.out_filename = None
         self.out_filehandle = None
         self.pdbio = None
+        self.Xray_max_resolution = None
 
         if self.struct:
 
@@ -271,22 +272,38 @@ class Struct4Fit:
         self.info += "\nSaving PDB HITS to \'{}\'".format(self.out_filename)
         #self.pdbio = PDBIO(True)
 
+    def set_Xray(self, max_resolution):
+        self.Xray_max_resolution = max_resolution
+        self.info +="\nX-rey structures with resolution less then {}".\
+            format(self.Xray_max_resolution)
+
     def __str__(self):
         return self.info
 
     def scan(self, structf, counter):
-        (file_id, format) = parse_structure_filename(structf)
-        structure = get_structure_from_file(structf, format='auto')
-        if not structure:
-            return
         counter.name = "{}-length tuples of residues".format(self.ref_res_list_len)
         counter.new_file()
-        if self.verbose:
-            for key, value in sorted(structure.header.items()):
-                print("{:20} : {}".format(key, value))
-        for model in structure:
-            for chain in model:
-                try:
+        try:
+           (file_id, format) = parse_structure_filename(structf)
+           structure = get_structure_from_file(structf, format='auto')
+           if not structure:
+               counter.new_error()
+               return
+           xray_resolution = None
+           if self.Xray_max_resolution and structure.header and 'resolution' in structure.header:
+               xray_resolution = structure.header['resolution']
+               if xray_resolution and self.Xray_max_resolution < xray_resolution:
+                   print("Skipping  {}: X-ray resolution {:4.2f} > {:4.2f}".
+                          format(file_id, xray_resolution, self.Xray_max_resolution))
+                   return
+               elif not xray_resolution:
+                   if self.verbose:
+                       print("Scan pdb  {}: it does not have resolution. Processing.".format(file_id))
+           if self.verbose:
+              for key, value in sorted(structure.header.items()):
+                 print("{:20} : {}".format(key, value))
+           for model in structure:
+               for chain in model:
                     chain_res_aa = chain_sequence_aaselect(chain)
                     (seq_start, Seq_aa) = chain_one_letter_string(chain)
                     seq_water = chain_water(chain)
@@ -352,12 +369,12 @@ class Struct4Fit:
                                             pdbio.save(out_pdb, select = Hit_Select(hit), write_end = True)
                                             out_pdb.flush()
                                             out_pdb.close()
-                except IndexError as e:
-                    if self.verbose:
-                        eprint("Error in struct= {}, model= {}, chain= {}: {}".format(
-                               file_id, model.get_id(), chain.get_id(), e))
-                    counter.new_error()
-                    continue
+        except IndexError as e:
+            if self.verbose:
+                eprint("Error in struct= {}, model= {}, chain= {}: {}".format(
+                       file_id, model.get_id(), chain.get_id(), e))
+                counter.new_error()
+
 
     def __bool__(self):
         return(self.ok_flag)
