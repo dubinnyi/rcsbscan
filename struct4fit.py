@@ -305,16 +305,16 @@ class Struct4Fit:
            if self.Xray_max_resolution and structure.header and 'resolution' in structure.header:
                xray_resolution = structure.header['resolution']
                if xray_resolution and self.Xray_max_resolution < xray_resolution:
-                   print("Skip      {}: X-ray resolution {:4.2f} > {:4.2f}".
+                   mpprint("Skip      {}: X-ray resolution {:4.2f} > {:4.2f}".
                           format(file_id, xray_resolution, self.Xray_max_resolution))
                    counter.new_skipped()
                    return
                elif not xray_resolution and not self.Xray_only:
                    if self.verbose:
-                       print("Scan      {}: pdb does not have resolution. Processing.".
+                       mpprint("Scan      {}: pdb does not have resolution. Processing.".
                              format(file_id))
            if self.Xray_only and not xray_resolution:
-               print("Skip      {}: No resolution, Xray_only = True".
+               mpprint("Skip      {}: No resolution, Xray_only = True".
                     format(file_id))
                counter.new_skipped()
                return
