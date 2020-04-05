@@ -26,14 +26,18 @@ class FitCounter:
 
     def counters_reset(self):
         self.count_files = 0
+        self.count_skipped = 0
+        self.count_errors = 0
         self.count_struct = 0
         self.count_res_tuple = 0
         self.count_hits = 0
-        self.count_errors = 0
         self.timer_start()
 
     def new_file(self):
         self.count_files = self.count_files + 1
+
+    def new_skipped(self):
+        self.count_skipped = self.count_skipped + 1
 
     def new_struct(self):
         self.count_struct = self.count_struct + 1
@@ -50,8 +54,9 @@ class FitCounter:
     def __str__(self):
         out = []
         out.append("fitscan statistics after {:>4d} sec:".format(int(self.total_time)))
-        out.append("  {:>7} files".format(self.count_files))
-        out.append("  {:>7} structures".format(self.count_struct))
+        out.append("  {:>7} files with structutes".format(self.count_files))
+        out.append("  {:>7} files skipped".format(self.count_skipped))
+        out.append("  {:>7} structures in all models/chains".format(self.count_struct))
         out.append("  {:>7} hits".format(self.count_hits))
         out.append("  {:>7} {}".format(self.count_res_tuple, self.name))
         out.append("  {:>7} errors".format(self.count_errors))
@@ -65,6 +70,7 @@ class FitCounter:
         ret = FitCounter(self.name)
         ret.total_time =      self.total_time +      counter.total_time
         ret.count_files =     self.count_files +     counter.count_files
+        ret.count_skipped =   self.count_skipped +   counter.count_skipped
         ret.count_struct =    self.count_struct +    counter.count_struct
         ret.count_res_tuple = self.count_res_tuple + counter.count_res_tuple
         ret.count_hits =      self.count_hits +      counter.count_hits
@@ -272,10 +278,15 @@ class Struct4Fit:
         self.info += "\nSaving PDB HITS to \'{}\'".format(self.out_filename)
         #self.pdbio = PDBIO(True)
 
-    def set_Xray(self, max_resolution):
+    def set_Xray(self, max_resolution, xray_only):
         self.Xray_max_resolution = max_resolution
-        self.info +="\nX-rey structures with resolution less then {}".\
+        self.Xray_only = xray_only
+        self.info += "\nScan X-ray structures with resolution less then {}".\
             format(self.Xray_max_resolution)
+        if self.Xray_only:
+            self.info += "\nOnly X-RAY structures will be scanned"
+        else:
+            self.info += "\nAll non X-RAY structures will be scanned regrdless of resolution"
 
     def __str__(self):
         return self.info
@@ -289,16 +300,25 @@ class Struct4Fit:
            if not structure:
                counter.new_error()
                return
+
            xray_resolution = None
            if self.Xray_max_resolution and structure.header and 'resolution' in structure.header:
                xray_resolution = structure.header['resolution']
                if xray_resolution and self.Xray_max_resolution < xray_resolution:
-                   print("Skipping  {}: X-ray resolution {:4.2f} > {:4.2f}".
+                   print("Skip      {}: X-ray resolution {:4.2f} > {:4.2f}".
                           format(file_id, xray_resolution, self.Xray_max_resolution))
+                   counter.new_skipped()
                    return
-               elif not xray_resolution:
+               elif not xray_resolution and not self.Xray_only:
                    if self.verbose:
-                       print("Scan pdb  {}: it does not have resolution. Processing.".format(file_id))
+                       print("Scan      {}: pdb does not have resolution. Processing.".
+                             format(file_id))
+           if self.Xray_only and not xray_resolution:
+               print("Skip      {}: No resolution, Xray_only = True".
+                    format(file_id))
+               counter.new_skipped()
+               return
+
            if self.verbose:
               for key, value in sorted(structure.header.items()):
                  print("{:20} : {}".format(key, value))
