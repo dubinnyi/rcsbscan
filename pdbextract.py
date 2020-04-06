@@ -6,7 +6,7 @@ import argparse
 from Bio.PDB.StructureBuilder import StructureBuilder
 
 
-def pdb_extract(structure, extract_model, extract_chain, res_range_tuple):
+def pdb_extract(structure, extract_model, extract_chain, res_range_tuple, water_id):
 
     structure_builder = StructureBuilder()
     structure_builder.init_structure('pdb_extract')
@@ -30,9 +30,11 @@ def pdb_extract(structure, extract_model, extract_chain, res_range_tuple):
             new_resseq = start_resseq
             for residue in chain:
                 hetero_flag, resseq, icode = residue.get_id()
-                if res_range_tuple and \
-                        res_range_tuple[0] > resseq or \
-                        res_range_tuple[1] <= resseq:
+                if res_range_tuple:
+                    if not hetero_flag or hetero_flag == ' ':
+                        if res_range_tuple[0] > resseq or res_range_tuple[1] <= resseq :
+                            continue
+                if water_id and hetero_flag == 'W' and resseq != water_id:
                     continue
                 new_resseq += 1
                 structure_builder.init_residue(residue.get_resname(), hetero_flag, new_resseq, icode)
@@ -54,6 +56,7 @@ def main():
     arg_parser.add_argument('--model', type=int, help='Model number to extract from structure', default=None)
     arg_parser.add_argument('--chain', type=str, help='Chain in structure', default=None)
     arg_parser.add_argument('--residues', type=str, help='Residue range in structure', default = None)
+    arg_parser.add_argument('--water', type=int, help='Water molecule to extract', default=None)
     arg_parser.add_argument('-w', '--pdb-warnings', action='store_true',
                             help='show structure parsing warnings', default=False)
 
@@ -68,7 +71,7 @@ def main():
 
     try:
         structure = get_structure_from_file(args.struct, format='pdb')
-        out_structure = pdb_extract(structure, args.model, args.chain, res_range_tuple)
+        out_structure = pdb_extract(structure, args.model, args.chain, res_range_tuple, args.water)
     except FileNotFoundError:
         eprint("File not found: {}".format(args.struct))
         return None
