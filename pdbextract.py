@@ -30,10 +30,9 @@ def pdb_extract(structure, extract_model, extract_chain, res_range_tuple, water_
             new_resseq = start_resseq
             for residue in chain:
                 hetero_flag, resseq, icode = residue.get_id()
-                if res_range_tuple:
-                    if not hetero_flag or hetero_flag == ' ':
-                        if res_range_tuple[0] > resseq or res_range_tuple[1] <= resseq :
-                            continue
+                if res_range_tuple and ( not hetero_flag or hetero_flag == ' ' ) :
+                    if res_range_tuple[0] > resseq or res_range_tuple[1] <= resseq :
+                        continue
                 if water_id and hetero_flag == 'W' and resseq != water_id:
                     continue
                 new_resseq += 1
