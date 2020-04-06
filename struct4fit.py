@@ -3,6 +3,7 @@ from typing import Optional, Any
 
 from tools import *
 from collections import namedtuple
+from pdbextract import pdb_extract
 
 class FitCounter:
     def __init__(self, name):
@@ -349,10 +350,12 @@ class Struct4Fit:
                             self.sup.set_atoms(self.ref_atoms, atoms_to_fit)
                             if self.sup.rms <= self.max_rms:
                                 # apply rotation to all atoms in pdb hit
+                                # All atoms in residues, not only N,CA,C,O
                                 all_hit_atoms = select_atoms_from_res_list(res_to_fit, set())
                                 self.sup.apply(all_hit_atoms)
                                 # check water match
                                 water_match_str = ""
+                                water_match_id = None
                                 if self.water_vector:
                                     water_atoms = select_atoms_from_res_list(seq_water, self.water_atoms_set)
                                     if water_atoms:
@@ -377,16 +380,17 @@ class Struct4Fit:
                                 if self.out_filename:
                                     with LOCK:
                                         with open(self.out_filename, 'a') as out_pdb:
+                                            out_structure = pdb_extract(structure, model.get_id(), chain.get_id(), self.res_range_tuple, water_match_id)
                                             out_pdb.write("REMARK 777 {} {}\n".format(hit, water_match_str))
-                                            for (res_new, res_old) in zip(range(self.ref_seq_len), res_to_fit):
-                                                ro = res_old
-                                                rn = res_new
-                                                #ro.id(('', rn + 1, ''))
+                                            #for (res_new, res_old) in zip(range(self.ref_seq_len), res_to_fit):
+                                            #    ro = res_old
+                                            #    rn = res_new
+                                            #    #ro.id(('', rn + 1, ''))
                                             #hit.res_start = 1
                                             #hit.res_end = self.ref_seq_len + 1
                                             pdbio = PDBIO(True)
-                                            pdbio.set_structure(structure)
-                                            pdbio.save(out_pdb, select = Hit_Select(hit), write_end = True)
+                                            pdbio.set_structure(out_structure)
+                                            pdbio.save(out_pdb, write_end = False)
                                             out_pdb.flush()
                                             out_pdb.close()
         except IndexError as e:

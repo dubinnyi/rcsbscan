@@ -33,7 +33,12 @@ def pdb_extract(structure, extract_model, extract_chain, res_range_tuple, water_
                 if res_range_tuple and ( not hetero_flag or hetero_flag == ' ' ) :
                     if res_range_tuple[0] > resseq or res_range_tuple[1] <= resseq :
                         continue
-                if water_id and hetero_flag == 'W' and resseq != water_id:
+                if hetero_flag == 'W':
+                    if not water_id:
+                        continue
+                    elif resseq != water_id:
+                        continue
+                if hetero_flag.startswith('H'):
                     continue
                 new_resseq += 1
                 structure_builder.init_residue(residue.get_resname(), hetero_flag, new_resseq, icode)
