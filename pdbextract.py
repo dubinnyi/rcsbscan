@@ -5,6 +5,47 @@ import argparse
 
 from Bio.PDB.StructureBuilder import StructureBuilder
 
+
+def pdb_extract(structure, extract_model, extract_chain, res_range_tuple):
+
+    structure_builder = StructureBuilder()
+    structure_builder.init_structure('pdb_extract')
+    structure_builder.set_line_counter(0)
+    start_resseq = 0
+    current_model_id = 0
+    line_counter = 0
+
+    for model in structure:
+        if extract_model and model.get_id() != extract_model:
+            continue
+
+        structure_builder.init_model(current_model_id, current_model_id)
+        current_model_id += 1
+
+        for chain in model:
+            if extract_chain and chain.get_id() != extract_chain:
+                continue
+            structure_builder.init_seg(' ')
+            structure_builder.init_chain(chain.get_id())
+            new_resseq = start_resseq
+            for residue in chain:
+                hetero_flag, resseq, icode = residue.get_id()
+                if res_range_tuple and \
+                        res_range_tuple[0] > resseq or \
+                        res_range_tuple[1] <= resseq:
+                    continue
+                new_resseq += 1
+                structure_builder.init_residue(residue.get_resname(), hetero_flag, new_resseq, icode)
+                for atom in residue:
+                    structure_builder.init_atom(atom.get_name(), atom.get_coord(),
+                                                atom.get_bfactor(), atom.get_occupancy(), atom.get_altloc(),
+                                                atom.get_fullname())
+                    structure_builder.set_line_counter(line_counter)
+                    line_counter += 1
+    out_structure = structure_builder.get_structure()
+    return out_structure
+
+
 def main():
     arg_parser = argparse.ArgumentParser(
         usage='Print sequence information from pdb or mmcif file(s)')
@@ -25,59 +66,20 @@ def main():
     if args.residues:
         res_range_tuple = range_str_to_tuple(args.residues)
 
-    structf = args.struct
-    structure_builder = StructureBuilder()
-    structure_builder.init_structure(args.out)
-    structure_builder.set_line_counter(0)
-    start_resseq = 0
     try:
-        (file_id, format) = parse_structure_filename(structf)
-        structure = get_structure_from_file(structf, format='pdb')
-
-        current_model_id = 0
-        line_counter = 0
-        for model in structure:
-            if  args.model and model != args.model:
-                continue
-
-            structure_builder.init_model(current_model_id, current_model_id)
-            current_model_id += 1
-            #this_model = model.get_id()
-            #if current_model_id:
-            #    structure_builder.init_model(current_model_id-1, this_model)
-            #else:
-            #    structure_builder.init_model(this_model)
-            #prev_model = this_model
-
-            for chain in model:
-                if args.chain and chain != args.chain:
-                    continue
-                structure_builder.init_seg(' ')
-                structure_builder.init_chain(chain.get_id())
-                new_resseq = start_resseq
-                for residue in chain:
-                    hetero_flag, resseq, icode = residue.get_id()
-                    if res_range_tuple and \
-                            res_range_tuple[0] > resseq or \
-                            res_range_tuple[1] <= resseq:
-                        continue
-                    new_resseq += 1
-                    structure_builder.init_residue(residue.get_resname(), hetero_flag, new_resseq, icode)
-                    for atom in residue:
-                        structure_builder.init_atom(atom.get_name(), atom.get_coord(),
-                                atom.get_bfactor(), atom.get_occupancy(), atom.get_altloc(),
-                                atom.get_fullname())
-                        structure_builder.set_line_counter(line_counter)
-                        line_counter+= 1
-
+        structure = get_structure_from_file(args.struct, format='pdb')
+        out_structure = pdb_extract(structure, args.model, args.chain, res_range_tuple)
     except FileNotFoundError:
-        eprint("File not found: {}".format(structf))
+        eprint("File not found: {}".format(args.struct))
+        return None
 
-    out_pdb = args.out
-    out_structure = structure_builder.get_structure()
-    pdbio = PDBIO(True)
-    pdbio.set_structure(out_structure)
-    pdbio.save(out_pdb, write_end=True)
+    try:
+        out_pdb = args.out
+        pdbio = PDBIO(True)
+        pdbio.set_structure(out_structure)
+        pdbio.save(out_pdb, write_end=True)
+    except:
+        eprint("Could not write to file {}".format(out_pdb))
 
 
 if __name__ == "__main__":
