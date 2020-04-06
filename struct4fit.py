@@ -352,7 +352,9 @@ class Struct4Fit:
                                 # apply rotation to all atoms in pdb hit
                                 # All atoms in residues, not only N,CA,C,O
                                 all_hit_atoms = select_atoms_from_res_list(res_to_fit, set())
+                                ###################################
                                 self.sup.apply(all_hit_atoms)
+                                ##################################
                                 # check water match
                                 water_match_str = ""
                                 water_match_id = None
@@ -380,7 +382,10 @@ class Struct4Fit:
                                 if self.out_filename:
                                     with LOCK:
                                         with open(self.out_filename, 'a') as out_pdb:
-                                            out_structure = pdb_extract(structure, model.get_id(), chain.get_id(), self.res_range_tuple, water_match_id)
+
+                                            hit_res_tuple_start = res_to_fit[0].get_id()[1]
+                                            hit_res_tuple = (hit_res_tuple_start, hit_res_tuple_start + self.ref_res_list_len)
+                                            out_structure = pdb_extract(structure, model.get_id(), chain.get_id(), hit_res_tuple, water_match_id)
                                             out_pdb.write("REMARK 777 {} {}\n".format(hit, water_match_str))
                                             #for (res_new, res_old) in zip(range(self.ref_seq_len), res_to_fit):
                                             #    ro = res_old
