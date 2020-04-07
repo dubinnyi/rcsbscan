@@ -73,7 +73,7 @@ def parse_structure_filename(filename):
 
 
 def get_structure_from_file(filename, **kwargs):
-    # format argument does not work
+    # format argument is unused
     force_format = format = 'auto'
     if 'format' in kwargs.keys():
         force_format = kwargs['format']
@@ -243,9 +243,9 @@ def get_res_and_atoms(chain_res_aa, resno, ref_res_list_len, ref_atom_names_set)
         return (None, None)
 
 
-def recursive_expand(list_of_files):
+def recursive_expand(list_of_files_and_dirs):
     result = []
-    for f in list_of_files:
+    for f in list_of_files_and_dirs:
         if os.path.isfile(f):
             result.append(f)
         elif os.path.isdir(f):
