@@ -176,19 +176,19 @@ class Struct4Fit:
         if self.Xray_max_resolution and structure.header and 'resolution' in structure.header:
             xray_resolution = structure.header['resolution']
             if xray_resolution and self.Xray_max_resolution < xray_resolution:
-                mpprint("Skip      {}: X-ray resolution {:4.2f} > {:4.2f}".
-                        format(file_id, xray_resolution, self.Xray_max_resolution))
+                #mpprint("Skip      {}: X-ray resolution {:4.2f} > {:4.2f}".
+                #        format(file_id, xray_resolution, self.Xray_max_resolution))
                 return False
             elif not xray_resolution and not self.Xray_only:
                 if self.verbose:
-                    mpprint("Scan      {}: pdb does not have resolution. Processing.".
-                            format(file_id))
+                    #mpprint("Scan      {}: pdb does not have resolution. Processing.".
+                    #        format(file_id))
                     return True
         if self.Xray_only and not xray_resolution:
-            mpprint("Skip      {}: No resolution, Xray_only = True".
-                    format(file_id))
+            #mpprint("Skip      {}: No resolution, Xray_only = True".
+            #       format(file_id))
             return False
-        mpprint("Scan      {}".format(file_id))
+        #mpprint("Scan      {}".format(file_id))
         return True
 
     def scan(self, structf, counter):
@@ -274,16 +274,16 @@ class Struct4Fit:
                                                             hit_res_tuple, water_match_id)
                                 hit.add_Structure(out_structure)
                                 counter.new_hit(hit)
-                                mpprint("{}".format(hit))
-                                if self.out_filename:
-                                    with LOCK:
-                                        with open(self.out_filename, 'a') as out_pdb:
-                                            out_pdb.write("REMARK 777 {}\n".format(hit))
-                                            pdbio = PDBIO(True)
-                                            pdbio.set_structure(out_structure)
-                                            pdbio.save(out_pdb, write_end=False)
-                                            out_pdb.flush()
-                                            out_pdb.close()
+                                mpprint("RMSD_HIT: {}".format(hit))
+                                # if self.out_filename:
+                                #     with LOCK:
+                                #         with open(self.out_filename, 'a') as out_pdb:
+                                #             out_pdb.write("REMARK 777 {}\n".format(hit))
+                                #             pdbio = PDBIO(True)
+                                #             pdbio.set_structure(out_structure)
+                                #             pdbio.save(out_pdb, write_end=False)
+                                #             out_pdb.flush()
+                                #             out_pdb.close()
         except IndexError as e:
             if self.verbose:
                 eprint("Error in struct= {}, model= {}, chain= {}: {}".format(

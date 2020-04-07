@@ -130,6 +130,13 @@ def main():
             print(rc)
         CountTotal = CountTotal + rc
 
+    print("All counters are accumulated")
+    CountTotal.sort_hits_by_rmsd()
+    print("All hits are sorted by RMSD")
+    CountTotal.print_hits()
+    print("Save all hits to {}".format(args.save_pdb_hits))
+    CountTotal.save_hits_to_pdb(args.save_pdb_hits)
+
     print("Overall statistics:")
     print(CountTotal)
     walltime = walltime_finish - walltime_start

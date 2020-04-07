@@ -57,6 +57,27 @@ class FitCounter:
     def new_error(self):
         self.count_errors = self.count_errors + 1
 
+    def sort_hits_by_rmsd(self):
+        self.hits.sort(key = lambda hit : hit.rmsd)
+
+    def print_hits(self):
+        for hit in self.hits:
+            print("{}".format(hit))
+
+    def save_hits_to_pdb(self, out_filename, max_structures = 100):
+        if out_filename.endswith('.pdb'):
+            base_filename = out_filename[0:-4]
+        else:
+            base_filename = out_filename
+        for i in range(0, len(self.hits), max_structures):
+            ifile = "{}_{:>05}.pdb".format(base_filename, i)
+            with open(ifile, 'w') as out_pdb:
+                pdbio = PDBIO(True)
+                for hit in self.hits:
+                    out_pdb.write("REMARK 777 {}\n".format(hit))
+                    pdbio.set_structure(hit.structure)
+                    pdbio.save(out_pdb, write_end=False)
+
     def __str__(self):
         out = []
         out.append("fitscan statistics after {:>4d} sec:".format(int(self.total_time)))
