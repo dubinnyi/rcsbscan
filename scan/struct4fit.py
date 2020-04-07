@@ -44,6 +44,7 @@ class Struct4Fit:
         self.out_filehandle = None
         self.pdbio = None
         self.Xray_max_resolution = None
+        self.Xray_only = None
 
         if self.struct:
 
