@@ -1,7 +1,8 @@
 #!/usr/bin/python3 -u
 
-from tools import *
-from struct4fit import Struct4Fit, FitCounter
+from scan.biotools import *
+from scan.struct4fit import Struct4Fit
+from scan.fitcounter import FitCounter
 
 import argparse
 

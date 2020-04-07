@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-from tools import *
+from scan.biotools import *
 import argparse
 
 def main():
