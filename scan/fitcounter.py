@@ -8,6 +8,7 @@ class FitCounter:
         self.name = name
         self.counters_reset()
         self.timer_reset()
+        self.hits = []
 
     def timer_reset(self):
         self.t0 = None
@@ -25,6 +26,7 @@ class FitCounter:
 
     def counters_reset(self):
         self.count_files = 0
+        self.count_scanned = 0
         self.count_skipped = 0
         self.count_errors = 0
         self.count_struct = 0
@@ -35,6 +37,9 @@ class FitCounter:
     def new_file(self):
         self.count_files = self.count_files + 1
 
+    def new_scanned(self):
+        self.count_scanned = self.count_scanned + 1
+
     def new_skipped(self):
         self.count_skipped = self.count_skipped + 1
 
@@ -44,8 +49,10 @@ class FitCounter:
     def new_res_tuple(self):
         self.count_res_tuple = self.count_res_tuple + 1
 
-    def new_hit(self):
+    def new_hit(self, hit = None):
         self.count_hits = self.count_hits + 1
+        if hit:
+            self.hits.append(hit)
 
     def new_error(self):
         self.count_errors = self.count_errors + 1
@@ -55,6 +62,7 @@ class FitCounter:
         out.append("fitscan statistics after {:>4d} sec:".format(int(self.total_time)))
         out.append("  {:>7} files with structutes".format(self.count_files))
         out.append("  {:>7} files skipped".format(self.count_skipped))
+        out.append("  {:>7} files scanned".format(self.count_scanned))
         out.append("  {:>7} structures in all models/chains".format(self.count_struct))
         out.append("  {:>7} hits".format(self.count_hits))
         out.append("  {:>7} {}".format(self.count_res_tuple, self.name))
@@ -70,8 +78,10 @@ class FitCounter:
         ret.total_time = self.total_time + counter.total_time
         ret.count_files = self.count_files + counter.count_files
         ret.count_skipped = self.count_skipped + counter.count_skipped
+        ret.count_scanned = self.count_scanned + counter.count_scanned
         ret.count_struct = self.count_struct + counter.count_struct
         ret.count_res_tuple = self.count_res_tuple + counter.count_res_tuple
         ret.count_hits = self.count_hits + counter.count_hits
         ret.count_errors = self.count_errors + counter.count_errors
+        ret.hits = self.hits + counter.hits
         return ret

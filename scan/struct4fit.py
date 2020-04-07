@@ -1,7 +1,7 @@
 #!/usr/bin/python3 -u
 
 from scan.biotools import *
-from scan.hit import RMSD_Hit, Water_Hit
+from scan.hit import Hit
 from pdbextract import pdb_extract
 
 
@@ -188,6 +188,7 @@ class Struct4Fit:
             mpprint("Skip      {}: No resolution, Xray_only = True".
                     format(file_id))
             return False
+        mpprint("Scan      {}".format(file_id))
         return True
 
     def scan(self, structf, counter):
@@ -203,6 +204,7 @@ class Struct4Fit:
             if not self.check_method_and_resolution(structure):
                 counter.new_skipped()
                 return
+            counter.new_scanned()
 
             if self.verbose:
                 for key, value in sorted(structure.header.items()):
@@ -235,12 +237,18 @@ class Struct4Fit:
                             if self.sup.rms <= self.max_rms:
                                 # apply rotation to all atoms in pdb hit
                                 # All atoms in residues, not only N,CA,C,O
+                                (r_start, r_seq) = res_list_to_one_letter_string(res_to_fit)
+                                hit = Hit(file_id, chain.get_id(), model.get_id(),
+                                          r_start, r_start + self.ref_res_list_len - 1, str(r_seq), self.sup.rms)
+
                                 all_hit_atoms = select_atoms_from_res_list(res_to_fit, set())
                                 ###################################
                                 self.sup.apply(all_hit_atoms)
                                 ##################################
+
                                 # check water match
-                                water_match_str = ""
+                                #water_hit = Water_Hit(None, None)
+                                #water_match_str = ""
                                 water_match_id = None
                                 if self.water_vector:
                                     water_atoms = select_atoms_from_res_list(seq_water, self.water_atoms_set)
@@ -257,22 +265,20 @@ class Struct4Fit:
                                             water_match_id = water_match_residue.get_id()[1]
                                             # water_match_id = water_match_id[1]
                                             water_rms = water_match[0] - self.water_atoms[0]
-                                            water_match_str = "WAT= {:4} wat_rms= {:>6.4f}".format(water_match_id,
-                                                                                                   water_rms)
-                                counter.new_hit()
-                                (r_start, r_seq) = res_list_to_one_letter_string(res_to_fit)
-                                hit = RMSD_Hit(file_id, chain.get_id(), model.get_id(),
-                                               r_start, r_start + self.ref_res_list_len - 1, str(r_seq), self.sup.rms)
-                                mpprint("{} {}".format(hit, water_match_str))
+                                            hit.add_Water(water_match_id, water_rms)
+                                            #water_match_str = "WAT= {:4} wat_rms= {:>6.4f}".format(water_match_id,
+                                            #                                                       water_rms)
+
+                                hit_res_tuple = (r_start, r_start + self.ref_res_list_len)
+                                out_structure = pdb_extract(structure, model.get_id(), chain.get_id(),
+                                                            hit_res_tuple, water_match_id)
+                                hit.add_Structure(out_structure)
+                                counter.new_hit(hit)
+                                mpprint("{}".format(hit))
                                 if self.out_filename:
                                     with LOCK:
                                         with open(self.out_filename, 'a') as out_pdb:
-                                            hit_res_tuple_start = res_to_fit[0].get_id()[1]
-                                            hit_res_tuple = (
-                                                hit_res_tuple_start, hit_res_tuple_start + self.ref_res_list_len)
-                                            out_structure = pdb_extract(structure, model.get_id(), chain.get_id(),
-                                                                        hit_res_tuple, water_match_id)
-                                            out_pdb.write("REMARK 777 {} {}\n".format(hit, water_match_str))
+                                            out_pdb.write("REMARK 777 {}\n".format(hit))
                                             pdbio = PDBIO(True)
                                             pdbio.set_structure(out_structure)
                                             pdbio.save(out_pdb, write_end=False)
