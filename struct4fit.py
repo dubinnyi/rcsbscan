@@ -292,31 +292,37 @@ class Struct4Fit:
     def __str__(self):
         return self.info
 
+    def check_method_and_resolution(self, structure):
+        file_id = structure.get_id()
+        xray_resolution = None
+        if self.Xray_max_resolution and structure.header and 'resolution' in structure.header:
+            xray_resolution = structure.header['resolution']
+            if xray_resolution and self.Xray_max_resolution < xray_resolution:
+                mpprint("Skip      {}: X-ray resolution {:4.2f} > {:4.2f}".
+                        format(file_id, xray_resolution, self.Xray_max_resolution))
+                return False
+            elif not xray_resolution and not self.Xray_only:
+                if self.verbose:
+                    mpprint("Scan      {}: pdb does not have resolution. Processing.".
+                            format(file_id))
+                    return True
+        if self.Xray_only and not xray_resolution:
+            mpprint("Skip      {}: No resolution, Xray_only = True".
+                    format(file_id))
+            return False
+        return True
+
     def scan(self, structf, counter):
         counter.name = "{}-length tuples of residues".format(self.ref_res_list_len)
         counter.new_file()
         try:
-           (file_id, format) = parse_structure_filename(structf)
            structure = get_structure_from_file(structf, format='auto')
+           file_id = structure.get_id()
            if not structure:
                counter.new_error()
                return
 
-           xray_resolution = None
-           if self.Xray_max_resolution and structure.header and 'resolution' in structure.header:
-               xray_resolution = structure.header['resolution']
-               if xray_resolution and self.Xray_max_resolution < xray_resolution:
-                   mpprint("Skip      {}: X-ray resolution {:4.2f} > {:4.2f}".
-                          format(file_id, xray_resolution, self.Xray_max_resolution))
-                   counter.new_skipped()
-                   return
-               elif not xray_resolution and not self.Xray_only:
-                   if self.verbose:
-                       mpprint("Scan      {}: pdb does not have resolution. Processing.".
-                             format(file_id))
-           if self.Xray_only and not xray_resolution:
-               mpprint("Skip      {}: No resolution, Xray_only = True".
-                    format(file_id))
+           if not self.check_method_and_resolution(structure):
                counter.new_skipped()
                return
 
@@ -382,17 +388,10 @@ class Struct4Fit:
                                 if self.out_filename:
                                     with LOCK:
                                         with open(self.out_filename, 'a') as out_pdb:
-
                                             hit_res_tuple_start = res_to_fit[0].get_id()[1]
                                             hit_res_tuple = (hit_res_tuple_start, hit_res_tuple_start + self.ref_res_list_len)
                                             out_structure = pdb_extract(structure, model.get_id(), chain.get_id(), hit_res_tuple, water_match_id)
                                             out_pdb.write("REMARK 777 {} {}\n".format(hit, water_match_str))
-                                            #for (res_new, res_old) in zip(range(self.ref_seq_len), res_to_fit):
-                                            #    ro = res_old
-                                            #    rn = res_new
-                                            #    #ro.id(('', rn + 1, ''))
-                                            #hit.res_start = 1
-                                            #hit.res_end = self.ref_seq_len + 1
                                             pdbio = PDBIO(True)
                                             pdbio.set_structure(out_structure)
                                             pdbio.save(out_pdb, write_end = False)

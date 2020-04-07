@@ -14,6 +14,21 @@ import Bio.SVDSuperimposer
 import multiprocessing as mp
 LOCK = mp.Lock()
 
+
+class MPCounter(object):
+    def __init__(self, initval=0):
+        self.val = mp.Value('i', initval)
+        self.lock = mp.Lock()
+
+    def increment(self):
+        with self.lock:
+            self.val.value += 1
+
+    def value(self):
+        with self.lock:
+            return self.val.value
+
+
 def eprint(*args, **kwargs):
     with LOCK:
         print(*args, file=sys.stderr, **kwargs)
