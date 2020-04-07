@@ -11,6 +11,8 @@ def main():
                             help='print header')
     arg_parser.add_argument('-c', '--print-chain', action='store_true',
                             help='print chain sequence in one-letter format')
+    arg_parser.add_argument('-s', '--print-sequence', action='store_true',
+                            help='Print sequence only in one-letter format')
     arg_parser.add_argument('-C', '--print-chain-full', action='store_true',
                             help='print full chain sequence (one line per residue)')
     arg_parser.add_argument('-w', '--pdb-warnings', action='store_true',
@@ -32,7 +34,7 @@ def main():
                 structure = get_structure_from_file(structf, format=args.format)
                 if not structure:
                     continue
-                if args.print_header:
+                if args.print_header and not args.print_sequence:
                     for key, value in sorted(structure.header.items()):
                         print("{:20} : {}".format(key, value))
                 for model in structure:
@@ -48,15 +50,17 @@ def main():
                         len_aa_gaps = 0 if not chain_aa else len(Seq_aa)
                         len_ins = 0 if not res_ins else len(res_ins)
                         len_water = 0 if not seq_water else len(seq_water)
-                        print("> {} model= {:2}, chain= {:1}, {:4} ({:4}) AA, start = {:4}, {:3} insertions, {:3} WAT".
-                              format(file_id, model.get_id(), chain.get_id(),
-                                     len_aa, len_aa_gaps, seq_start, len_ins, len_water))
+                        if not args.print_sequence:
+                            print(
+                                "> {} model= {:2}, chain= {:1}, {:4} ({:4}) AA, start = {:4}, {:3} insertions, {:3} WAT".
+                                format(file_id, model.get_id(), chain.get_id(),
+                                       len_aa, len_aa_gaps, seq_start, len_ins, len_water))
                         if args.print_chain:
                             if chain_aa and len(chain_aa) > 0:
                                 for i in range(0, len(Seq_aa), 60):
                                     print("   {}".format(Seq_aa[i:i + 60]))
 
-                        if args.print_chain_full:
+                        if args.print_chain_full and not args.print_chain:
                             print("All residues in chain {}:".format(chain))
                             for residue in chain:
                                 print(residue)
