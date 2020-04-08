@@ -73,7 +73,7 @@ class FitCounter:
             ifile = "{}_{:>05}.pdb".format(base_filename, i)
             with open(ifile, 'w') as out_pdb:
                 pdbio = PDBIO(True)
-                for hit in self.hits:
+                for hit in self.hits[i:i + max_structures]:
                     out_pdb.write("REMARK 777 {}\n".format(hit))
                     pdbio.set_structure(hit.structure)
                     pdbio.save(out_pdb, write_end=False)
