@@ -196,10 +196,11 @@ class Struct4Fit:
         counter.new_file()
         try:
             structure = get_structure_from_file(structf, format='auto')
-            file_id = structure.get_id()
+
             if not structure:
                 counter.new_error()
                 return
+            file_id = structure.get_id()
 
             if not self.check_method_and_resolution(structure):
                 counter.new_skipped()
