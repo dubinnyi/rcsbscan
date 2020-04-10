@@ -256,9 +256,10 @@ class Struct4Fit:
                             if self.sup.rms <= self.max_rms:
                                 # apply rotation to all atoms in pdb hit
                                 # All atoms in residues, not only N,CA,C,O
-                                all_hit_atoms = select_atoms_from_res_list(res_to_fit, set())
+
+                                all_atoms = chain.get_atoms()
                                 ###################################
-                                self.sup.apply(all_hit_atoms)
+                                self.sup.apply(all_atoms)
                                 ##################################
                                 # check water match
                                 water_match_str = ""
@@ -267,7 +268,7 @@ class Struct4Fit:
                                     water_atoms = select_atoms_from_res_list(seq_water, self.water_atoms_set)
                                     if water_atoms:
                                         # water_ids = [a.full_id() for a in water_atoms]
-                                        self.sup.apply(water_atoms)
+                                        # self.sup.apply(water_atoms)
                                         # print("Water molecules: {}".format(len(water_atoms)))
                                         # print("Water molecules tranformed: {}".format(len(water_atoms)))
                                         water_match = [water_atom for water_atom in water_atoms \
