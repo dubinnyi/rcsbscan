@@ -31,6 +31,7 @@ def pdb_extract(structure, extract_model, extract_chain, res_range_tuple, water_
             for residue in chain:
                 residue_atoms = None
                 hetero_flag, resseq, icode = residue.get_id()
+                new_icode = ' '
                 if res_range_tuple and ( not hetero_flag or hetero_flag == ' ' ) :
                     if res_range_tuple[0] - 1 > resseq:
                         continue
@@ -52,7 +53,7 @@ def pdb_extract(structure, extract_model, extract_chain, res_range_tuple, water_
                 if hetero_flag.startswith('H'):
                     continue
                 new_resseq += 1
-                structure_builder.init_residue(residue.get_resname(), hetero_flag, new_resseq, icode)
+                structure_builder.init_residue(residue.get_resname(), hetero_flag, new_resseq, new_icode)
                 for atom in residue_atoms:
                     structure_builder.init_atom(atom.get_name(), atom.get_coord(),
                                                 atom.get_bfactor(), atom.get_occupancy(), atom.get_altloc(),
