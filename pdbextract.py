@@ -11,9 +11,9 @@ def pdb_extract(structure, extract_model, extract_chain, res_range_tuple, water_
     structure_builder = StructureBuilder()
     structure_builder.init_structure('pdb_extract')
     structure_builder.set_line_counter(0)
-    start_resseq = 0
     current_model_id = 0
     line_counter = 0
+    start_resseq = -1
 
     for model in structure:
         if extract_model and model.get_id() != extract_model:
@@ -29,10 +29,21 @@ def pdb_extract(structure, extract_model, extract_chain, res_range_tuple, water_
             structure_builder.init_chain(chain.get_id())
             new_resseq = start_resseq
             for residue in chain:
+                residue_atoms = None
                 hetero_flag, resseq, icode = residue.get_id()
                 if res_range_tuple and ( not hetero_flag or hetero_flag == ' ' ) :
-                    if res_range_tuple[0] > resseq or res_range_tuple[1] <= resseq :
+                    if res_range_tuple[0] - 1 > resseq:
                         continue
+                    elif res_range_tuple[0] - 1 == resseq:
+                        residue_atoms = [ atom for atom in residue if \
+                                         ( atom.get_name() == 'C' or atom.get_name() == 'O' ) ]
+                    elif res_range_tuple[1] < resseq:
+                        continue
+                    elif res_range_tuple[1] == resseq:
+                        residue_atoms = [ atom for atom in residue if \
+                                         (atom.get_name() == 'N' or atom.get_name() == 'HN' ) ]
+                if not residue_atoms:
+                    residue_atoms = residue.get_list()
                 if hetero_flag == 'W':
                     if not water_id:
                         continue
@@ -42,7 +53,7 @@ def pdb_extract(structure, extract_model, extract_chain, res_range_tuple, water_
                     continue
                 new_resseq += 1
                 structure_builder.init_residue(residue.get_resname(), hetero_flag, new_resseq, icode)
-                for atom in residue:
+                for atom in residue_atoms:
                     structure_builder.init_atom(atom.get_name(), atom.get_coord(),
                                                 atom.get_bfactor(), atom.get_occupancy(), atom.get_altloc(),
                                                 atom.get_fullname())
