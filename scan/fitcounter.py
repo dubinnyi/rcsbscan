@@ -1,7 +1,7 @@
 #!/usr/bin/python3 -u
 
 from scan.biotools import *
-
+from pdbextract import pdb_extract
 
 class FitCounter:
     def __init__(self, name):
@@ -69,13 +69,16 @@ class FitCounter:
             base_filename = out_filename[0:-4]
         else:
             base_filename = out_filename
+        new_model= 0
         for i in range(0, len(self.hits), max_structures):
             ifile = "{}_{:>05}.pdb".format(base_filename, i)
             with open(ifile, 'w') as out_pdb:
                 pdbio = PDBIO(True)
                 for hit in self.hits[i:i + max_structures]:
                     out_pdb.write("REMARK 777 {}\n".format(hit))
-                    pdbio.set_structure(hit.structure)
+                    new_model += 1
+                    pdb_to_save = pdb_extract(hit.structure, new_model=new_model)
+                    pdbio.set_structure(pdb_to_save)
                     pdbio.save(out_pdb, write_end=False)
 
     def __str__(self):

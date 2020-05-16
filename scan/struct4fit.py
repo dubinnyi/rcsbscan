@@ -151,9 +151,9 @@ class Struct4Fit:
 
     def set_write(self, filename):
         self.out_filename = filename
-        out_filehandle = open(self.out_filename, 'w')
-        out_filehandle.write('')
-        out_filehandle.close()
+        # out_filehandle = open(self.out_filename, 'w')
+        # out_filehandle.write('')
+        # out_filehandle.close()
         self.info += "\nSaving PDB HITS to \'{}\'".format(self.out_filename)
         # self.pdbio = PDBIO(True)
 
@@ -271,8 +271,8 @@ class Struct4Fit:
                                             #                                                       water_rms)
 
                                 hit_res_tuple = (r_start, r_start + self.ref_res_list_len)
-                                out_structure = pdb_extract(structure, model.get_id(), chain.get_id(),
-                                                            hit_res_tuple, water_match_id)
+                                out_structure = pdb_extract(structure, model=model.get_id(), chain=chain.get_id(),
+                                                            res_range=hit_res_tuple, water=water_match_id)
                                 hit.add_Structure(out_structure)
                                 counter.new_hit(hit)
                                 mpprint("RMSD_HIT: {}".format(hit))

@@ -6,12 +6,17 @@ import argparse
 from Bio.PDB.StructureBuilder import StructureBuilder
 
 
-def pdb_extract(structure, extract_model, extract_chain, res_range_tuple, water_id):
+def pdb_extract(structure, **kwargs):
+
+    extract_model = None if not 'model' in kwargs else kwargs['model']
+    current_model_id = 0 if not 'new_model' in kwargs else kwargs['new_model']
+    extract_chain = None if not 'chain' in kwargs else kwargs['chain']
+    res_range_tuple = None if not 'res_range' in kwargs else kwargs['res_range']
+    water_id = None if not 'water' in kwargs else kwargs['water']
 
     structure_builder = StructureBuilder()
     structure_builder.init_structure('pdb_extract')
     structure_builder.set_line_counter(0)
-    current_model_id = 0
     line_counter = 0
     start_resseq = -1
 
@@ -86,7 +91,8 @@ def main():
 
     try:
         structure = get_structure_from_file(args.struct, format='pdb')
-        out_structure = pdb_extract(structure, args.model, args.chain, res_range_tuple, args.water)
+        out_structure = pdb_extract(structure, model=args.model, chain=args.chain,
+                            res_range=res_range_tuple, water=args.water)
     except FileNotFoundError:
         eprint("File not found: {}".format(args.struct))
         return None
