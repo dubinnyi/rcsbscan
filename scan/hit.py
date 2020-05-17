@@ -3,17 +3,20 @@
 from collections import namedtuple
 
 
-class Hit(namedtuple('RMSD_Hit', ['pdb', 'chain', 'model', 'res_start', 'res_end', 'hit_sequence', 'rmsd'])):
+class Hit(namedtuple('RMSD_Hit', ['pdb', 'chain', 'model', 'res_start', 'res_end', \
+                                  'hit_sequence', 'rmsd'])):
     def add_Water(self, water_id, water_rms):
         self.water_id = water_id
         self.water_rms = water_rms
 
-    def add_Structure(self, structure):
+    def add_Structure(self, structure, method='', chain_size=None):
         self.structure = structure
+        self.method = method
+        self.chain_size=chain_size
 
     def __str__(self):
-        out = "{} model= {:>3}, chain= {:1} hit= {:>4} {} {:<4} rms= {:>6.4f}"
-        out = out.format(self.pdb, self.model, self.chain,
+        out = "{} {} model= {:>3}, chain= {:1} size= {:>4} hit= {:>4} {} {:<4} rms= {:>6.4f}"
+        out = out.format(self.pdb, self.method, self.model, self.chain, self.chain_size,
                          self.res_start, self.hit_sequence, self.res_end, self.rmsd)
         if hasattr(self, 'water_id'):
             out += " WAT= {:4} wat_rms= {:>6.4f}"

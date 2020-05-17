@@ -170,25 +170,26 @@ class Struct4Fit:
     def __str__(self):
         return self.info
 
+    def get_method_and_resolution(self, structure):
+        method = None
+        resolution = None
+        if structure.header:
+            if 'resolution' in structure.header:
+                resolution = structure.header['resolution']
+            if 'structure_method' in structure.header:
+                method = structure.header['structure_method']
+        return method, resolution
+
+
     def check_method_and_resolution(self, structure):
         file_id = structure.get_id()
-        xray_resolution = None
-        if self.Xray_max_resolution and structure.header and 'resolution' in structure.header:
-            xray_resolution = structure.header['resolution']
-            if xray_resolution and self.Xray_max_resolution < xray_resolution:
-                #mpprint("Skip      {}: X-ray resolution {:4.2f} > {:4.2f}".
-                #        format(file_id, xray_resolution, self.Xray_max_resolution))
+        method, resolution = self.get_method_and_resolution(structure)
+        if self.Xray_max_resolution and resolution:
+            if self.Xray_max_resolution < resolution:
                 return False
-            elif not xray_resolution and not self.Xray_only:
-                if self.verbose:
-                    #mpprint("Scan      {}: pdb does not have resolution. Processing.".
-                    #        format(file_id))
-                    return True
-        if self.Xray_only and not xray_resolution:
-            #mpprint("Skip      {}: No resolution, Xray_only = True".
-            #       format(file_id))
-            return False
-        #mpprint("Scan      {}".format(file_id))
+        if self.Xray_only and method:
+            if method != 'x-ray diffraction':
+                return False
         return True
 
     def scan(self, structf, counter):
@@ -206,6 +207,13 @@ class Struct4Fit:
                 counter.new_skipped()
                 return
             counter.new_scanned()
+            method, resolution = self.get_method_and_resolution(structure)
+            if method == 'x-ray diffraction':
+                method_string = 'XRay {:4.2f}A'.format(resolution)
+            elif method == 'solution nmr':
+                method_string = 'NMR   {:3}#'.format(len(structure))
+            else:
+                method_string = method
 
             if self.verbose:
                 for key, value in sorted(structure.header.items()):
@@ -239,8 +247,9 @@ class Struct4Fit:
                                 # apply rotation to all atoms in pdb hit
                                 # All atoms in residues, not only N,CA,C,O
                                 (r_start, r_seq) = res_list_to_one_letter_string(res_to_fit)
-                                hit = Hit(file_id, chain.get_id(), model.get_id(),
-                                          r_start, r_start + self.ref_res_list_len - 1, str(r_seq), self.sup.rms)
+                                hit = Hit(pdb=file_id, chain=chain.get_id(), model=model.get_id(),
+                                          res_start=r_start, res_end=r_start + self.ref_res_list_len - 1,
+                                          hit_sequence=str(r_seq), rmsd=self.sup.rms)
 
                                 all_hit_atoms = select_atoms_from_res_list(res_to_fit, set())
                                 ###################################
@@ -273,7 +282,7 @@ class Struct4Fit:
                                 hit_res_tuple = (r_start, r_start + self.ref_res_list_len)
                                 out_structure = pdb_extract(structure, model=model.get_id(), chain=chain.get_id(),
                                                             res_range=hit_res_tuple, water=water_match_id)
-                                hit.add_Structure(out_structure)
+                                hit.add_Structure(out_structure, method_string, len_aa)
                                 counter.new_hit(hit)
                                 mpprint("RMSD_HIT: {}".format(hit))
                                 # if self.out_filename:
