@@ -98,7 +98,6 @@ def main():
     else:
         struct_list = args.struct
 
-
     nstruct = len(struct_list)
     print("nstruct: {}".format(nstruct))
 
