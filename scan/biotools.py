@@ -3,6 +3,7 @@ import sys, os
 import warnings
 import time
 from Bio.PDB.PDBExceptions import PDBConstructionWarning
+import re
 
 from Bio.PDB import *
 from Bio.Seq import Seq
@@ -167,6 +168,34 @@ def chain_water(chain):
     return res_list_water
 
 
+def chain_water_id(chain, water_id):
+    # Ok if chain is discontinued
+    res_list = chain.get_list()
+    res_list_water = [res for res in res_list \
+                      if res.get_id()[0] == 'W' and res.get_id()[1] == water_id]
+    return res_list_water
+
+
+def biopython_residue(string, hetfield = ' '):
+    # Return residue in biopython-compatible format
+    # insertion character after number is converted to icode
+    # hetfield is ' ' for ordinary residues
+    #
+    # examples:
+    # biopython_residue('10')
+    # (' ', 10, ' ')
+    # biopython_residue('11A')
+    # (' ', 11, 'A')
+    p = re.compile('(?P<resseq>\d+)(?P<icode>[A-Z]?)$')
+    m = p.match(string)
+    if not m:
+        return None
+    resseq = m.group('resseq')
+    icode = m.group('icode')
+    icode = ' ' if not icode else icode
+    return (hetfield, resseq, icode)
+
+
 def range_str_to_tuple(range_str):
     if not range_str or range_str == '*' or range_str == '.' or range_str.upper() == 'ALL':
         # Select all
@@ -176,24 +205,82 @@ def range_str_to_tuple(range_str):
         # Select all
         return None
     elif len(range_split) == 1:
-        res_start = int(range_split[0])
+        res_start = biopython_residue(range_split[0])
         res_finish = res_start
     else:
-        res_start = int(range_split[0])
-        res_finish = int(range_split[1])
-    return (res_start, res_finish + 1)
+        res_start = biopython_residue(range_split[0])
+        res_finish = biopython_residue(range_split[1])
+    #res_finish[1] += 1
+    return (res_start, res_finish)
 
 
-def select_aa_residue_range_from_chain(chain, range_tuple):
+def select_residues_from_chain(chain, **kwargs):
+    # chain: biopython chain
+    # range_tuple: tuple of resid's, e.g. ((' ',1,' '), (' ',10, 'A'))
+    # LAST RESIDUE WILL BE SELECTED
     res_list_aa = chain_sequence_aaselect(chain)
-    if range_tuple:
-        res_selected = [res for res in res_list_aa
-                        if res.get_id()[1] >= range_tuple[0] and res.get_id()[1] < range_tuple[1]]
-        if not res_selected:
-            raise IndexError("list index '{}' is out of range".format(range_tuple))
+    id_list = [res.get_id() for res in res_list_aa]
+
+    count = kwargs['count'] if 'count' in kwargs else 0
+    first_res = kwargs['first'] if 'first' in kwargs else None
+    last_res  = kwargs['last']  if 'last'  in kwargs else None
+
+    first_index, last_index = 0, len(res_list_aa)
+    if first_res:
+        try:
+            first_index = id_list.index(first_res)
+        except:
+            raise IndexError("Residue '{}' is out of sequence range".format(first_res))
+    if last_res:
+        try:
+            last_index = id_list.index(last_res)
+        except:
+            raise IndexError("Residue '{}' is out of sequence range".format(last_res))
+
+    if first_res and last_res:
+        return res_list_aa[first_index: last_index + 1]
+    elif first_res and count:
+        if first_index - count < 0:
+            count = first_index
+        return res_list_aa[first_index - count : first_index]
+    elif last_res and count:
+        return res_list_aa[last_index + 1 : last_index + 1 + count]
+    elif first_res and not count:
+        return res_list_aa[first_index :]
+    elif last_res and not count:
+        return res_list_aa[: last_index + 1]
     else:
-        res_selected = res_list_aa
-    return res_selected
+        return res_list_aa
+    #
+    # if first and last:
+    #
+    #     first_res, last_res = range_tuple
+    #
+    #     try:
+    #         first_index = res_id_list.index(first_res)
+    #     except:
+    #         raise IndexError("Residue '{}' is out of sequence range".format(first_res))
+    #     try:
+    #         last_index = res_id_list.index(last_res)
+    #     except:
+    #         raise IndexError("Residue '{}' is out of sequence range".format(last_res))
+    #
+    #     if first_index - before < 0:
+    #         before = first_index
+    #     if last_index + after > len(res_list_aa):
+    #         after = len(res_list_aa) - 1 - last_index
+    #
+    #     res_before =   ex]res_list_aa[first_index - before : first_ind
+    #     res_selected = res_list_aa[first_index          : last_index]
+    #     res_after =    res_list_aa[last_index           : last_index + after]
+    #
+    # else:
+    #     res_before = []
+    #     res_selected = res_list_aa
+    #     res_after = []
+    # return {'before' : res_before,
+    #         'selected' : res_selected,
+    #         'after' : res_after }
 
 
 def atom_str_to_set(atom_str):
