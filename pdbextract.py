@@ -33,15 +33,21 @@ def pdb_extract(structure, **kwargs):
             structure_builder.init_seg(' ')
             structure_builder.init_chain(chain.get_id())
             new_resseq = start_resseq
-            first_res = res_range_tuple[0]
-            last_res = res_range_tuple[1]
             resdict = {}
-            resdict['before'] = select_residues_from_chain(chain,
-                                                           first = first_res, count = 1)
-            resdict['hit'] = select_residues_from_chain(chain,
-                                                        first=first_res, last=last_res)
-            resdict['after'] = select_residues_from_chain(chain,
-                                                          last = last_res, count = 1)
+            if res_range_tuple:
+                first_res = res_range_tuple[0]
+                last_res = res_range_tuple[1]
+
+                resdict['before'] = select_residues_from_chain(chain,
+                                                               first = first_res, count = 1)
+                resdict['hit'] = select_residues_from_chain(chain,
+                                                            first=first_res, last=last_res)
+                resdict['after'] = select_residues_from_chain(chain,
+                                                              last = last_res, count = 1)
+            else:
+                resdict['before'] = []
+                resdict['hit'] = chain.get_list()
+                resdict['after'] = []
             resdict['water'] = chain_water_id(chain, water_id)
             for key in ['before', 'hit', 'after', 'water']:
                 for residue in resdict[key]:

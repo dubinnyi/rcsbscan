@@ -176,25 +176,29 @@ def chain_water_id(chain, water_id):
     return res_list_water
 
 
-def biopython_residue(string, hetfield = ' '):
+def bio_str_to_resid(string, hetfield =' '):
     # Return residue in biopython-compatible format
     # insertion character after number is converted to icode
     # hetfield is ' ' for ordinary residues
     #
     # examples:
-    # biopython_residue('10')
+    # bio_str_to_resid('10')
     # (' ', 10, ' ')
-    # biopython_residue('11A')
+    # bio_str_to_resid('11A')
     # (' ', 11, 'A')
     p = re.compile('(?P<resseq>\d+)(?P<icode>[A-Z]?)$')
     m = p.match(string)
     if not m:
         return None
-    resseq = m.group('resseq')
+    resseq = int(m.group('resseq'))
     icode = m.group('icode')
     icode = ' ' if not icode else icode
     return (hetfield, resseq, icode)
 
+
+def bio_resid_to_str(resid):
+    hetfield, resseq, icode = resid
+    return "{}{}".format(resseq, icode.strip())
 
 def range_str_to_tuple(range_str):
     if not range_str or range_str == '*' or range_str == '.' or range_str.upper() == 'ALL':
@@ -205,11 +209,11 @@ def range_str_to_tuple(range_str):
         # Select all
         return None
     elif len(range_split) == 1:
-        res_start = biopython_residue(range_split[0])
+        res_start = bio_str_to_resid(range_split[0])
         res_finish = res_start
     else:
-        res_start = biopython_residue(range_split[0])
-        res_finish = biopython_residue(range_split[1])
+        res_start = bio_str_to_resid(range_split[0])
+        res_finish = bio_str_to_resid(range_split[1])
     #res_finish[1] += 1
     return (res_start, res_finish)
 

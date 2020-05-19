@@ -24,6 +24,7 @@ class Struct4Fit:
         self.pdbio = None
         self.Xray_max_resolution = None
         self.Xray_only = None
+        self.info = ''
 
         if self.struct:
 
@@ -66,10 +67,12 @@ class Struct4Fit:
                 else:
                     self.res_range_tuple = None  # Select all
                 if self.res_range_tuple:
-                    self.res_range_str = "{}-{}".format(self.res_range_tuple[0], self.res_range_tuple[1] - 1)
+                    self.res_range_str = "{}-{}".format(bio_resid_to_str(self.res_range_tuple[0]),
+                                                        bio_resid_to_str(self.res_range_tuple[1]))
                 else:
                     self.res_range_str = "All"
-                self.ref_res_list = select_residues_from_chain(self.ref_ch, self.res_range_tuple)
+                self.ref_res_list = select_residues_from_chain(self.ref_ch, \
+                            first = self.res_range_tuple[0], last = self.res_range_tuple[1])
                 self.ref_res_list_len = len(self.ref_res_list)
             except:
                 eprint("Could not get residues '{}' from chain '{}' of model '{}' in file '{}'".
@@ -247,8 +250,13 @@ class Struct4Fit:
                                 # apply rotation to all atoms in pdb hit
                                 # All atoms in residues, not only N,CA,C,O
                                 (r_start, r_seq) = res_list_to_one_letter_string(res_to_fit)
+                                #hit_res_tuple = (r_start, r_start + self.ref_res_list_len)
+                                hit_res_first = chain_res_aa[resno].get_id()
+                                hit_res_last  = chain_res_aa[resno + self.ref_res_list_len - 1].get_id()
+                                hit_res_tuple = (hit_res_first, hit_res_last)
+
                                 hit = Hit(pdb=file_id, chain=chain.get_id(), model=model.get_id(),
-                                          res_start=r_start, res_end=r_start + self.ref_res_list_len - 1,
+                                          res_first=hit_res_first, res_last=hit_res_last,
                                           hit_sequence=str(r_seq), rmsd=self.sup.rms)
 
                                 all_hit_atoms = select_atoms_from_res_list(res_to_fit, set())
@@ -279,7 +287,6 @@ class Struct4Fit:
                                             #water_match_str = "WAT= {:4} wat_rms= {:>6.4f}".format(water_match_id,
                                             #                                                       water_rms)
 
-                                hit_res_tuple = (r_start, r_start + self.ref_res_list_len)
                                 out_structure = pdb_extract(structure, model=model.get_id(), chain=chain.get_id(),
                                                             res_range=hit_res_tuple, water=water_match_id)
                                 hit.add_Structure(out_structure, method_string, len_aa)
