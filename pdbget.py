@@ -34,7 +34,7 @@ def main():
     nfiles = len(struct_list)
     print("nfiles: {}".format(nfiles))
 
-    phi_array, psi_array = [], []
+    phi_array, psi_array, info = [], [], []
     maxres = 0
     for structf in struct_list:
         try:
@@ -63,11 +63,13 @@ def main():
                         psi = calc_dihedral(v2, v3, v4, v5)/np.pi*180
                         phi_list.append(phi)
                         psi_list.append(psi)
-                        if args.verbose:
-                            print("{:6} {:3} {:1} {:4} {:4} PHI= {:8.3f} PSI= {:8.3f}".format(
+                        info_str = "{:6} {:3} {:1} {:4} {:4} PHI= {:8.3f} PSI= {:8.3f}".format(
                                 structf,model.get_id(), chain.get_id(),
                                 res2.get_resname(), res2.get_id()[1] + res2.get_id()[2],
-                                phi, psi))
+                                phi, psi)
+                        info.append(info_str)
+                        if args.verbose:
+                            print(info_str)
                     phi_array.append(phi_list)
                     psi_array.append(psi_list)
                     s += 1
@@ -77,8 +79,18 @@ def main():
 
     Nstruct = len(phi_array)
     print("All {} structures read, maxres = {}".format(Nstruct, maxres))
-    phi_np = np.array(phi_array)
-    psi_np = np.array(psi_array)
+    phi_np = np.zeros((Nstruct, maxres))
+    psi_np = np.zeros((Nstruct, maxres))
+    #phi_np = np.array(phi_array)
+    #psi_np = np.array(psi_array)
+    for s in range(Nstruct):
+        try:
+            phi_np[s,:] = phi_array[s]
+            psi_np[s,:] = psi_array[s]
+        except:
+            eprint("Can't copy phi,psi from structure {}:".format(s))
+            eprint(info[s])
+            continue
     print("PHI shape = {}".format(phi_np.shape))
     print("PSI shape = {}".format(psi_np.shape))
     if args.output:
