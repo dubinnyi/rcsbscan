@@ -53,7 +53,7 @@ def main():
                         print("maxres = {} in file {}, structure {}".format(maxres, structf, s))
 
                     #maxres = Nres if Nres > maxres else maxres
-                    phi_list, psi_list = [], []
+                    phi_list, psi_list = [None]*Nres, [None]*Nres
                     info_str = ''
                     for res1,res2,res3 in zip(res_list[:-2],res_list[1:-1], res_list[2:]):
                         v1 = res1['C'].get_vector()
@@ -63,12 +63,17 @@ def main():
                         v5 = res3['N'].get_vector()
                         phi = calc_dihedral(v1, v2, v3, v4)/np.pi*180
                         psi = calc_dihedral(v2, v3, v4, v5)/np.pi*180
-                        phi_list.append(phi)
-                        psi_list.append(psi)
                         phi_psi_str = "{:6} {:3} {:1} {:4} {:4} PHI= {:8.3f} PSI= {:8.3f}".format(
                                 structf,model.get_id(), chain.get_id(),
                                 res2.get_resname(), bio_resid_to_str(res2.get_id()),
                                 phi, psi)
+                        resseq = res2.get_id()[1]
+                        try:
+                            phi_list[resseq] = phi
+                            psi_list[resseq] = psi
+                        except:
+                            eprint("Can't assign phi,psi, resseq is out of range")
+                            eprint(phi_psi_str)
                         info_str += phi_psi_str + '\n'
                         if args.verbose:
                             print(phi_psi_str)
