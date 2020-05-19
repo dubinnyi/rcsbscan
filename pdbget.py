@@ -53,7 +53,7 @@ def main():
                         print("maxres = {} in file {}, structure {}".format(maxres, structf, s))
 
                     #maxres = Nres if Nres > maxres else maxres
-                    phi_list, psi_list = [None]*Nres, [None]*Nres
+                    phi_list, psi_list = [None]*maxres, [None]*maxres
                     info_str = ''
                     for res1,res2,res3 in zip(res_list[:-2],res_list[1:-1], res_list[2:]):
                         v1 = res1['C'].get_vector()
@@ -82,6 +82,8 @@ def main():
                     info.append(info_str)
                     if Nres != maxres:
                         eprint("Data array size mispatch: Nres = {}, maxres = {}".format(Nres, maxres))
+                        eprint("phi_list = {}".format(phi_list))
+                        eprint("psi_list = {}".format(psi_list))
                         eprint(info_str)
                     s += 1
 
