@@ -240,8 +240,8 @@ class Struct4Fit:
                     if len_aa < self.ref_res_list_len:
                         continue
                     for resno in range(len_aa - self.ref_res_list_len):
-                        (res_to_fit, atoms_to_fit) = get_res_and_atoms(chain_res_aa, resno, self.ref_res_list_len,
-                                                                       self.ref_atom_names_set)
+                        (res_to_fit, atoms_to_fit) = get_res_and_atoms(chain_res_aa, resno,
+                                    self.ref_res_list_len, self.ref_atom_names_set)
                         if atoms_to_fit and len(atoms_to_fit) == len(self.ref_atoms):
                             counter.new_res_tuple()
                             # print(atoms_to_fit)
@@ -259,9 +259,9 @@ class Struct4Fit:
                                           res_first=hit_res_first, res_last=hit_res_last,
                                           hit_sequence=str(r_seq), rmsd=self.sup.rms)
 
-                                all_hit_atoms = select_atoms_from_res_list(res_to_fit, set())
+                                all_atoms = chain.get_atoms()
                                 ###################################
-                                self.sup.apply(all_hit_atoms)
+                                self.sup.apply(all_atoms)
                                 ##################################
 
                                 # check water match
@@ -272,7 +272,7 @@ class Struct4Fit:
                                     water_atoms = select_atoms_from_res_list(seq_water, self.water_atoms_set)
                                     if water_atoms:
                                         # water_ids = [a.full_id() for a in water_atoms]
-                                        self.sup.apply(water_atoms)
+                                        # self.sup.apply(water_atoms)
                                         # print("Water molecules: {}".format(len(water_atoms)))
                                         # print("Water molecules tranformed: {}".format(len(water_atoms)))
                                         water_match = [water_atom for water_atom in water_atoms \

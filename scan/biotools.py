@@ -255,36 +255,6 @@ def select_residues_from_chain(chain, **kwargs):
         return res_list_aa[: last_index + 1]
     else:
         return res_list_aa
-    #
-    # if first and last:
-    #
-    #     first_res, last_res = range_tuple
-    #
-    #     try:
-    #         first_index = res_id_list.index(first_res)
-    #     except:
-    #         raise IndexError("Residue '{}' is out of sequence range".format(first_res))
-    #     try:
-    #         last_index = res_id_list.index(last_res)
-    #     except:
-    #         raise IndexError("Residue '{}' is out of sequence range".format(last_res))
-    #
-    #     if first_index - before < 0:
-    #         before = first_index
-    #     if last_index + after > len(res_list_aa):
-    #         after = len(res_list_aa) - 1 - last_index
-    #
-    #     res_before =   ex]res_list_aa[first_index - before : first_ind
-    #     res_selected = res_list_aa[first_index          : last_index]
-    #     res_after =    res_list_aa[last_index           : last_index + after]
-    #
-    # else:
-    #     res_before = []
-    #     res_selected = res_list_aa
-    #     res_after = []
-    # return {'before' : res_before,
-    #         'selected' : res_selected,
-    #         'after' : res_after }
 
 
 def atom_str_to_set(atom_str):
@@ -332,6 +302,8 @@ def get_res_and_atoms(chain_res_aa, resno, ref_res_list_len, ref_atom_names_set)
         atom_list_to_fit = select_atoms_from_res_list(res_list_to_fit, ref_atom_names_set)
         return (res_list_to_fit, atom_list_to_fit)
     else:
+        # eprint("Residue list is discontinous: {} - {}".format(res_list_to_fit[0].get_full_id(),
+        #                                                      res_list_to_fit[-1].get_id()))
         return (None, None)
 
 

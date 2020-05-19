@@ -70,51 +70,6 @@ def pdb_extract(structure, **kwargs):
                         structure_builder.set_line_counter(line_counter)
                         line_counter += 1
 
-            # for residue in res_before:
-            #     residue_atoms = [atom for atom in residue if \
-            #                      (atom.get_name() == 'C' or atom.get_name() == 'O')]
-            #     new_resseq += 1
-            #     structure_builder.init_residue(residue.get_resname(), ' ', new_resseq, ' ')
-            #     for atom in residue_atoms:
-            #         structure_builder.init_atom(atom.get_name(), atom.get_coord(),
-            #                                     atom.get_bfactor(), atom.get_occupancy(),
-            #                                     atom.get_altloc(),
-            #                                     atom.get_fullname())
-            #         structure_builder.set_line_counter(line_counter)
-            #         line_counter += 1
-            #
-            # for residue in chain:
-            #     residue_atoms = None
-            #     resid = residue.get_id()
-            #     hetero_flag, resseq, icode = resid
-            #     if res_range_tuple and ( not hetero_flag or hetero_flag == ' ' ) :
-            #         if res_range_tuple[0] - 1 > resseq:
-            #             continue
-            #         elif res_range_tuple[0] - 1 == resseq:
-            #             residue_atoms = [ atom for atom in residue if \
-            #                              ( atom.get_name() == 'C' or atom.get_name() == 'O' ) ]
-            #         elif res_range_tuple[1] < resseq:
-            #             continue
-            #         elif res_range_tuple[1] == resseq:
-            #             residue_atoms = [ atom for atom in residue if \
-            #                              (atom.get_name() == 'N' or atom.get_name() == 'HN' ) ]
-            #     if not residue_atoms:
-            #         residue_atoms = residue.get_list()
-            #     if hetero_flag == 'W':
-            #         if not water_id:
-            #             continue
-            #         elif resseq != water_id:
-            #             continue
-            #     if hetero_flag.startswith('H'):
-            #         continue
-            #     new_resseq += 1
-            #     structure_builder.init_residue(residue.get_resname(), hetero_flag, new_resseq, icode)
-            #     for atom in residue_atoms:
-            #         structure_builder.init_atom(atom.get_name(), atom.get_coord(),
-            #                                     atom.get_bfactor(), atom.get_occupancy(), atom.get_altloc(),
-            #                                     atom.get_fullname())
-            #         structure_builder.set_line_counter(line_counter)
-            #         line_counter += 1
     out_structure = structure_builder.get_structure()
     return out_structure
 
