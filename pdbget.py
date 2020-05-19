@@ -65,7 +65,7 @@ def main():
                         psi_list.append(psi)
                         info_str = "{:6} {:3} {:1} {:4} {:4} PHI= {:8.3f} PSI= {:8.3f}".format(
                                 structf,model.get_id(), chain.get_id(),
-                                res2.get_resname(), res2.get_id()[1] + res2.get_id()[2],
+                                res2.get_resname(), bio_resid_to_str(res2.get_id()),
                                 phi, psi)
                         info.append(info_str)
                         if args.verbose:
