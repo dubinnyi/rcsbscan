@@ -72,7 +72,7 @@ def main():
                             phi_list[resseq-1] = phi
                             psi_list[resseq-1] = psi
                         except:
-                            eprint("Can't assign phi,psi, resseq is out of range")
+                            eprint("Can't assign phi,psi: resseq is out of range")
                             eprint(phi_psi_str)
                         info_str += phi_psi_str + '\n'
                         if args.verbose:
