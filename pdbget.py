@@ -69,8 +69,8 @@ def main():
                                 phi, psi)
                         resseq = res2.get_id()[1]
                         try:
-                            phi_list[resseq] = phi
-                            psi_list[resseq] = psi
+                            phi_list[resseq-1] = phi
+                            psi_list[resseq-1] = psi
                         except:
                             eprint("Can't assign phi,psi, resseq is out of range")
                             eprint(phi_psi_str)
