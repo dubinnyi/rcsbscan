@@ -50,6 +50,10 @@ def pdb_extract(structure, **kwargs):
                 resdict['after'] = []
             resdict['water'] = chain_water_id(chain, water_id)
             for key in ['before', 'hit', 'after', 'water']:
+                if key == 'hit' and len(resdict['before']) < 1:
+                    new_resseq = new_resseq + 1
+                if key == 'water' and  len(resdict['after']) < 1:
+                    new_resseq = new_resseq + 1
                 for residue in resdict[key]:
                     new_resseq += 1
                     structure_builder.init_residue(residue.get_resname(), ' ', new_resseq, ' ')
