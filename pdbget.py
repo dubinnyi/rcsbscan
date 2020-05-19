@@ -51,8 +51,10 @@ def main():
                     if Nres > maxres:
                         maxres = Nres
                         print("maxres = {} in file {}, structure {}".format(maxres, structf, s))
+
                     #maxres = Nres if Nres > maxres else maxres
                     phi_list, psi_list = [], []
+                    info_str = ''
                     for res1,res2,res3 in zip(res_list[:-2],res_list[1:-1], res_list[2:]):
                         v1 = res1['C'].get_vector()
                         v2 = res2['N'].get_vector()
@@ -63,15 +65,19 @@ def main():
                         psi = calc_dihedral(v2, v3, v4, v5)/np.pi*180
                         phi_list.append(phi)
                         psi_list.append(psi)
-                        info_str = "{:6} {:3} {:1} {:4} {:4} PHI= {:8.3f} PSI= {:8.3f}".format(
+                        phi_psi_str = "{:6} {:3} {:1} {:4} {:4} PHI= {:8.3f} PSI= {:8.3f}".format(
                                 structf,model.get_id(), chain.get_id(),
                                 res2.get_resname(), bio_resid_to_str(res2.get_id()),
                                 phi, psi)
-                        info.append(info_str)
+                        info_str += phi_psi_str + '\n'
                         if args.verbose:
-                            print(info_str)
+                            print(phi_psi_str)
                     phi_array.append(phi_list)
                     psi_array.append(psi_list)
+                    info.append(info_str)
+                    if Nres != maxres:
+                        eprint("Data array size mispatch: Nres = {}, maxres = {}".format(Nres, maxres))
+                        eprint(info_str)
                     s += 1
 
         except FileNotFoundError:
@@ -90,6 +96,7 @@ def main():
         except:
             eprint("Can't copy phi,psi from structure {}:".format(s))
             eprint(info[s])
+            eprint(sys.exc_info()[0])
             continue
     print("PHI shape = {}".format(phi_np.shape))
     print("PSI shape = {}".format(psi_np.shape))
