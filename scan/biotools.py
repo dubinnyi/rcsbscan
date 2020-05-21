@@ -220,14 +220,16 @@ def range_str_to_tuple(range_str):
 
 def select_residues_from_chain(chain, **kwargs):
     # chain: biopython chain
-    # range_tuple: tuple of resid's, e.g. ((' ',1,' '), (' ',10, 'A'))
-    # LAST RESIDUE WILL BE SELECTED
+    # first_res: first residue id to select, e.g. (' ',1,' ')
+    # last_res: last residue to select, e.g. (' ',10, 'A')
+    # gap_count: select 'gap_count' residues before first_res or after last_res
+    # select all residues if no argumants provided
     res_list_aa = chain_sequence_aaselect(chain)
     id_list = [res.get_id() for res in res_list_aa]
 
-    count = kwargs['count'] if 'count' in kwargs else 0
-    first_res = kwargs['first'] if 'first' in kwargs else None
-    last_res  = kwargs['last']  if 'last'  in kwargs else None
+    gap_count = kwargs['gap_count'] if 'gap_count' in kwargs else 0
+    first_res = kwargs['first_res'] if 'first_res' in kwargs else None
+    last_res  = kwargs['last_res']  if 'last_res'  in kwargs else None
 
     first_index, last_index = 0, len(res_list_aa)
     if first_res:
@@ -243,15 +245,15 @@ def select_residues_from_chain(chain, **kwargs):
 
     if first_res and last_res:
         return res_list_aa[first_index: last_index + 1]
-    elif first_res and count:
-        if first_index - count < 0:
-            count = first_index
-        return res_list_aa[first_index - count : first_index]
-    elif last_res and count:
-        return res_list_aa[last_index + 1 : last_index + 1 + count]
-    elif first_res and not count:
+    elif first_res and gap_count:
+        if first_index - gap_count < 0:
+            gap_count = first_index
+        return res_list_aa[first_index - gap_count : first_index]
+    elif last_res and gap_count:
+        return res_list_aa[last_index + 1 : last_index + 1 + gap_count]
+    elif first_res and not gap_count:
         return res_list_aa[first_index :]
-    elif last_res and not count:
+    elif last_res and not gap_count:
         return res_list_aa[: last_index + 1]
     else:
         return res_list_aa

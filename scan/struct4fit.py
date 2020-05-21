@@ -72,7 +72,7 @@ class Struct4Fit:
                 else:
                     self.res_range_str = "All"
                 self.ref_res_list = select_residues_from_chain(self.ref_ch, \
-                            first = self.res_range_tuple[0], last = self.res_range_tuple[1])
+                            first_res = self.res_range_tuple[0], last_res = self.res_range_tuple[1])
                 self.ref_res_list_len = len(self.ref_res_list)
             except:
                 eprint("Could not get residues '{}' from chain '{}' of model '{}' in file '{}'".
@@ -251,12 +251,12 @@ class Struct4Fit:
                                 # All atoms in residues, not only N,CA,C,O
                                 (r_start, r_seq) = res_list_to_one_letter_string(res_to_fit)
                                 #hit_res_tuple = (r_start, r_start + self.ref_res_list_len)
-                                hit_res_first = chain_res_aa[resno].get_id()
-                                hit_res_last  = chain_res_aa[resno + self.ref_res_list_len - 1].get_id()
-                                hit_res_tuple = (hit_res_first, hit_res_last)
+                                hit_first_res = chain_res_aa[resno].get_id()
+                                hit_last_res  = chain_res_aa[resno + self.ref_res_list_len - 1].get_id()
+                                #hit_res_tuple = (hit_res_first, hit_res_last)
 
                                 hit = Hit(pdb=file_id, chain=chain.get_id(), model=model.get_id(),
-                                          res_first=hit_res_first, res_last=hit_res_last,
+                                          res_first=hit_first_res, res_last=hit_last_res,
                                           hit_sequence=str(r_seq), rmsd=self.sup.rms)
 
                                 all_atoms = chain.get_atoms()
@@ -287,8 +287,9 @@ class Struct4Fit:
                                             #water_match_str = "WAT= {:4} wat_rms= {:>6.4f}".format(water_match_id,
                                             #                                                       water_rms)
 
-                                out_structure = pdb_extract(structure, model=model.get_id(), chain=chain.get_id(),
-                                                            res_range=hit_res_tuple, water=water_match_id)
+                                out_structure = pdb_extract(structure, model = model.get_id(), chain=chain.get_id(),
+                                                    first_res = hit_first_res, last_res = hit_last_res,
+                                                    gap_count = 1, water = water_match_id)
                                 hit.add_Structure(out_structure, method_string, len_aa)
                                 counter.new_hit(hit)
                                 mpprint("RMSD_HIT: {}".format(hit))

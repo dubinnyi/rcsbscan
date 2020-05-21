@@ -8,55 +8,65 @@ from Bio.PDB.StructureBuilder import StructureBuilder
 
 def pdb_extract(structure, **kwargs):
 
+    # model to extract from pdb
     extract_model = None if not 'model' in kwargs else kwargs['model']
-    current_model_id = 0 if not 'new_model' in kwargs else kwargs['new_model']
+    new_model_id = -1 if not 'new_model' in kwargs else kwargs['new_model']
     extract_chain = None if not 'chain' in kwargs else kwargs['chain']
-    res_range_tuple = None if not 'res_range' in kwargs else kwargs['res_range']
+    first_res = None if not 'first_res' in kwargs else kwargs['first_res']
+    last_res = None if not 'last_res' in kwargs else kwargs['last_res']
+    new_first_res = None if not 'new_first_res' in kwargs else kwargs['new_first_res']
+    gap_count = None if not 'gap_count' in kwargs else kwargs['gap_count']
     water_id = None if not 'water' in kwargs else kwargs['water']
+
+    model_rebumber_flag = bool(extract_model or new_model_id >= 0)
+    res_renumber_flag = bool(first_res or last_res or new_first_res or gap_count)
 
     structure_builder = StructureBuilder()
     structure_builder.init_structure('pdb_extract')
     structure_builder.set_line_counter(0)
     line_counter = 0
-    start_resseq = -1
+    start_resseq_by_default = 1 if not new_first_res else new_first_res
 
     for model in structure:
-        if extract_model and model.get_id() != extract_model:
+        if model_rebumber_flag and extract_model and model.get_id() != extract_model:
             continue
 
-        structure_builder.init_model(current_model_id, current_model_id)
-        current_model_id += 1
+        if model_rebumber_flag and new_model_id >= 0:
+            this_model_id = new_model_id
+            new_model_id += 1
+        else:
+            this_model_id = model.get_id()
+        structure_builder.init_model(this_model_id, this_model_id)
 
         for chain in model:
             if extract_chain and chain.get_id() != extract_chain:
                 continue
             structure_builder.init_seg(' ')
             structure_builder.init_chain(chain.get_id())
-            new_resseq = start_resseq
             resdict = {}
-            if res_range_tuple:
-                first_res = res_range_tuple[0]
-                last_res = res_range_tuple[1]
+            if res_renumber_flag:
+                # first_res = res_range_tuple[0]
+                # last_res = res_range_tuple[1]
 
                 resdict['before'] = select_residues_from_chain(chain,
-                                                               first = first_res, count = 1)
+                                        first_res = first_res, gap_count = gap_count)
                 resdict['hit'] = select_residues_from_chain(chain,
-                                                            first=first_res, last=last_res)
+                                        first_res = first_res, last_res = last_res)
                 resdict['after'] = select_residues_from_chain(chain,
-                                                              last = last_res, count = 1)
+                                        last_res = last_res, gap_count = gap_count)
             else:
                 resdict['before'] = []
                 resdict['hit'] = chain.get_list()
                 resdict['after'] = []
+            new_resseq = start_resseq_by_default - len(resdict['before'])
             resdict['water'] = chain_water_id(chain, water_id)
             for key in ['before', 'hit', 'after', 'water']:
-                if key == 'hit' and len(resdict['before']) < 1:
-                    new_resseq = new_resseq + 1
-                if key == 'water' and  len(resdict['after']) < 1:
-                    new_resseq = new_resseq + 1
                 for residue in resdict[key]:
-                    new_resseq += 1
-                    structure_builder.init_residue(residue.get_resname(), ' ', new_resseq, ' ')
+                    if res_renumber_flag:
+                        new_resid = ' ', new_resseq, ' '
+                    else:
+                        new_resid = residue.get_id()
+                    structure_builder.init_residue(residue.get_resname(), *new_resid)
                     residue_atoms = None
                     if key == 'before':
                         residue_atoms = [atom for atom in residue if \
@@ -73,6 +83,9 @@ def pdb_extract(structure, **kwargs):
                                                     atom.get_fullname())
                         structure_builder.set_line_counter(line_counter)
                         line_counter += 1
+                    new_resseq += 1
+                    if key == 'water' and gap_count and len(resdict['after']) != gap_count:
+                        new_resseq += gap_count - len(resdict['after'])
 
     out_structure = structure_builder.get_structure()
     return out_structure
