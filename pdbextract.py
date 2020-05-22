@@ -15,7 +15,7 @@ def pdb_extract(structure, **kwargs):
     first_res = None if not 'first_res' in kwargs else kwargs['first_res']
     last_res = None if not 'last_res' in kwargs else kwargs['last_res']
     new_first_res = None if not 'new_first_res' in kwargs else kwargs['new_first_res']
-    gap_count = None if not 'gap_count' in kwargs else kwargs['gap_count']
+    gap_count = 0 if not 'gap_count' in kwargs else kwargs['gap_count']
     water_id = None if not 'water' in kwargs else kwargs['water']
 
     model_rebumber_flag = bool(extract_model or new_model_id >= 0)
@@ -108,14 +108,14 @@ def main():
     if not args.pdb_warnings:
         warnings.simplefilter("ignore", PDBConstructionWarning)
 
-    res_range_tuple = None
+    first_res, last_res  = None, None
     if args.residues:
-        res_range_tuple = range_str_to_tuple(args.residues)
+        first_res, last_res = range_str_to_tuple(args.residues)
 
     try:
         structure = get_structure_from_file(args.struct, format='pdb')
         out_structure = pdb_extract(structure, model=args.model, chain=args.chain,
-                            res_range=res_range_tuple, water=args.water)
+                    first_res=first_res, last_res=last_res, water=args.water)
     except FileNotFoundError:
         eprint("File not found: {}".format(args.struct))
         return None

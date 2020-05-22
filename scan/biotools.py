@@ -245,11 +245,11 @@ def select_residues_from_chain(chain, **kwargs):
 
     if first_res and last_res:
         return res_list_aa[first_index: last_index + 1]
-    elif first_res and gap_count:
+    elif first_res and ( gap_count is not None ):
         if first_index - gap_count < 0:
             gap_count = first_index
         return res_list_aa[first_index - gap_count : first_index]
-    elif last_res and gap_count:
+    elif last_res and ( gap_count is not None ):
         return res_list_aa[last_index + 1 : last_index + 1 + gap_count]
     elif first_res and not gap_count:
         return res_list_aa[first_index :]
