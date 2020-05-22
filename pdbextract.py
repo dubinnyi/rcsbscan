@@ -18,7 +18,7 @@ def pdb_extract(structure, **kwargs):
     gap_count = 0 if not 'gap_count' in kwargs else kwargs['gap_count']
     water_id = None if not 'water' in kwargs else kwargs['water']
 
-    model_rebumber_flag = bool(extract_model or new_model_id >= 0)
+    model_rebumber_flag = bool( (extract_model is not None ) or new_model_id >= 0)
     res_renumber_flag = bool(first_res or last_res or new_first_res or gap_count)
 
     structure_builder = StructureBuilder()
@@ -28,7 +28,8 @@ def pdb_extract(structure, **kwargs):
     start_resseq_by_default = 1 if not new_first_res else new_first_res
 
     for model in structure:
-        if model_rebumber_flag and extract_model and model.get_id() != extract_model:
+        if model_rebumber_flag and \
+                ( extract_model is not None ) and model.get_id() != extract_model:
             continue
 
         if model_rebumber_flag and new_model_id >= 0:
