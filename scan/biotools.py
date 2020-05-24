@@ -119,10 +119,12 @@ def chain_sequence_aaselect(chain):
 
 
 def res_oneletter(res):
+    dict_3to1 = IUPACData.protein_letters_3to1.copy()
+    dict_3to1['Mse'] = 'M'
     try:
         rname3 = res.get_resname()
         rname3 = rname3[0].upper() + rname3[1:3].lower()
-        rname1 = IUPACData.protein_letters_3to1[rname3]
+        rname1 = dict_3to1[rname3]
     except KeyError:
         rname1 = '.'
     return rname1
