@@ -119,14 +119,27 @@ def chain_sequence_aaselect(chain):
 
 
 def res_oneletter(res):
-    dict_3to1 = IUPACData.protein_letters_3to1.copy()
-    dict_3to1['Mse'] = 'M'
+    #dict_3to1 = IUPACData.protein_letters_3to1.copy()
+    dict_3to1 = {}
+    dict_3to1['Mse'] = 'm' # Seleno methyonine   https://www.rcsb.org/ligand/MSE
+    dict_3to1['Mly'] = 'k' # N,N dimethyl lysine https://www.rcsb.org/ligand/MLY
+    dict_3to1['Cso'] = 'c' # S-HYDROXYCYSTEINE   https://www.rcsb.org/ligand/CSO
+    dict_3to1['Csd'] = 'a' # 3-SULFINOALANINE    https://www.rcsb.org/ligand/CSD
+    dict_3to1['Cme'] = 'e' # S,S-(2-HYDROXYETHYL)THIOCYSTEINE
+    #                                            https://www.rcsb.org/ligand/CME
+    dict_3to1['Tys'] = 'y' # O-SULFO-L-TYROSINE  https://www.rcsb.org/ligand/TYS
+    dict_3to1['Dah'] = 'f' # 3,4-DIHYDROXYPHENYLALANINE
+    #                                            https://www.rcsb.org/ligand/DAH
+
+    rname3 = res.get_resname()
+    rname3 = rname3[0].upper() + rname3[1:3].lower()
     try:
-        rname3 = res.get_resname()
-        rname3 = rname3[0].upper() + rname3[1:3].lower()
-        rname1 = dict_3to1[rname3]
+        rname1 = IUPACData.protein_letters_3to1[rname3]
     except KeyError:
-        rname1 = '.'
+        try:
+            rname1 = dict_3to1[rname3]
+        except KeyError:
+            rname1 = '.'
     return rname1
 
 
