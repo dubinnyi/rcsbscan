@@ -132,7 +132,7 @@ def res_oneletter(res):
     #                                            https://www.rcsb.org/ligand/DAH
 
     rname3 = res.get_resname()
-    rname3 = rname3[0].upper() + rname3[1:3].lower()
+    rname3 = rname3[0].upper() + rname3[1:].lower()
     try:
         rname1 = IUPACData.protein_letters_3to1[rname3]
     except KeyError:
