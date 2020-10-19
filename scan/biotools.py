@@ -333,3 +333,4 @@ def recursive_expand(list_of_files_and_dirs):
             subdirs = [os.path.join(f, d) for d in os.listdir(f)]
             result.extend(recursive_expand(subdirs))
     return result
+    

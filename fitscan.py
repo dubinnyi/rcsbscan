@@ -47,6 +47,7 @@ def main():
                             help='Maximal resolution of X-ray structures to scan')
     arg_parser.add_argument('--xray-only', action='store_true', default=False,
                             help='Scan only X-ray structures')
+    arg_parser.add_argument('--ncpu', type=int, help='Number of CPU to use', default = None)
     args = arg_parser.parse_args()
 
     if not args.pdb_warnings:
@@ -82,7 +83,12 @@ def main():
     if args.verbose:
         print(CountTotal)
 
-    ncpu = mp.cpu_count()
+    ncpu_onboard = mp.cpu_count()
+    if args.ncpu:
+        ncpu = min(ncpu_onboard, args.ncpu)
+    else:
+        ncpu = ncpu_onboard
+    print("Start the pool of {} CPU (of {} available)".format(ncpu, ncpu_onboard))
     pool = mp.Pool(ncpu)
 
     if not args.struct:
