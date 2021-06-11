@@ -181,6 +181,10 @@ class Struct4Fit:
                 resolution = structure.header['resolution']
             if 'structure_method' in structure.header:
                 method = structure.header['structure_method']
+        #if not resolution and structure.resolution:
+        #    resolution = structure.resolution
+        #if not method and structure.experimental_methods:
+        #    method = structure.experimental_methods
         return method, resolution
 
 

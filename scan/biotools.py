@@ -5,6 +5,7 @@ import time
 from Bio.PDB.PDBExceptions import PDBConstructionWarning
 import re
 
+from Bio.PDB.mmtf import MMTFParser
 from Bio.PDB import *
 from Bio.Seq import Seq
 from Bio.Data import IUPACData
@@ -53,11 +54,13 @@ def opengz(filename, args: 'r'):
 def parse_structure_filename(filename):
     id = os.path.basename(filename)
     format = 'auto'
+    zip_flag = False
     if id.startswith("pdb"):
         id = id[3:]
         format = 'pdb'
     if id.endswith(".gz"):
         id = id[0:-3]
+        zip_flag = True
     if id.endswith(".pdb"):
         id = id[0:-4]
         format = 'pdb'
@@ -69,8 +72,11 @@ def parse_structure_filename(filename):
         format = 'cif'
     if id.endswith(".ent"):
         id = id[0:-4]
+    if id.endswith(".mmtf"):
+        id = id[0:-5]
+        format = 'mmtf'
     id = id.upper()
-    return (id, format)
+    return (id, format, zip_flag)
 
 
 def get_structure_from_file(filename, **kwargs):
@@ -78,20 +84,31 @@ def get_structure_from_file(filename, **kwargs):
     force_format = format = 'auto'
     if 'format' in kwargs.keys():
         force_format = kwargs['format']
-    (file_id, filename_format) = parse_structure_filename(filename)
+    (file_id, filename_format, zip_flag) = parse_structure_filename(filename)
     cif_parser = MMCIFParser()
     pdb_parser = PDBParser()
+    mmtf_parser = MMTFParser()
     if force_format != 'auto':
         format = force_format
     if format == 'auto':
         format = filename_format
     if format == 'pdb' or format == 'auto':
         parsers = [pdb_parser, cif_parser]
+    elif format == 'mmtf' or format == 'auto':
+        parsers = [mmtf_parser]
     else:
-        parsers = [cif_parser, pdb_parser]
+        parsers = [cif_parser, pdb_parser, mmtf_parser]
     for parser in parsers:
         try:
-            with opengz(filename, 'r') as handle:
+            if zip_flag:
+                open_function = opengz
+            else:
+                open_function = open
+            if format == 'mmtf':
+                structure = parser.get_structure(filename)
+                if structure:
+                    return structure
+            with open_function(filename, 'r') as handle:
                 structure = parser.get_structure(file_id, handle)
                 if structure:
                     return structure
