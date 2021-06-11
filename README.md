@@ -2,14 +2,24 @@
 structure database screening with a user-defined 3D structural template (reference structure).
 
 The amino acid sequence of the template is completely ignored in the scan process, only atomwise RMSD of the reference 
-structure with residue tuples is the criteria for the structural match hit. Residue tuple is the sequance of
-residues with defined 3D structure. All rmsd hits are prinded with match description and
-are optionally rwitten to the separate PDB file for future analysis.
+structure with **residue tuples** by all backbone atoms is the criteria for the structural hit. 
+**Residue tuple** is the sequence of residues with defined 3D structure of the same length as the 
+reference structural template provided. For example, 9-residue protein have four six-reside tuples to be checked for 
+structural hit:
+```buildoutcfg
+1-ABCDEFGHI-9  -- scanned structure from the database
+  XXXXXX  |
+  |XXXXXX |
+  | XXXXXX|
+  |  XXXXXX    -- reference structure
+ 
+```
+All rmsd hits are printed to the terminal with match description. The structures found 
+are optionally saved to the separate PDB file for future analysis.
 
 The RCSB protein databease should be downloaded locally and preferably to the hard drive of the 
 computational server. Please follow the instructions provided by RCSB on the following link:
 https://www.rcsb.org/docs/programmatic-access/batch-downloads-with-shell-script
-
 
 ```
 rcsbscan.py ARGS 
@@ -55,4 +65,5 @@ Ussuming that RCSB clone is downloadad to the folder ```./RCSB/pdb/```:
 ```
 rcsbscan.py ./RCSB/pdb/ -r --ref-structure ./examples/alpha-helix_A10.pdp
 ```
-Scans every PDB files of the local RCSB clone for atomwise match with an alpha-helix template
+-- scans every PDB files of the local RCSB clone for atomwise match with 
+an alpha-helix template
