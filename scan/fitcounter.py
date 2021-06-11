@@ -65,6 +65,11 @@ class FitCounter:
             print("{}".format(hit))
 
     def save_hits_to_pdb(self, out_filename, max_structures = 100):
+        if not out_filename:
+            print("No filename was provided to store the results found")
+            print("Use the command-line argimens \'--save-pdb-hits FILE\' to save all matches in PDB format")
+            return
+        print("Save all hits to {}".format(out_filename))
         if out_filename.endswith('.pdb'):
             base_filename = out_filename[0:-4]
         else:

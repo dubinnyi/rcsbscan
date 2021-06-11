@@ -143,7 +143,6 @@ def main():
     print("Overall statistics:")
     print(CountTotal)
     print("Evaluation time: {:8.2f}".format(walltime))
-    print("Save all hits to {}".format(args.save_pdb_hits))
     CountTotal.save_hits_to_pdb(args.save_pdb_hits)
 
 

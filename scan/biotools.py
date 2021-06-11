@@ -259,9 +259,13 @@ def select_residues_from_chain(chain, **kwargs):
     res_list_aa = chain_sequence_aaselect(chain)
     id_list = [res.get_id() for res in res_list_aa]
 
+    res_tuple = kwargs['res_tuple'] if 'res_tuple' in kwargs else None
     gap_count = kwargs['gap_count'] if 'gap_count' in kwargs else 0
-    first_res = kwargs['first_res'] if 'first_res' in kwargs else None
-    last_res  = kwargs['last_res']  if 'last_res'  in kwargs else None
+    if res_tuple:
+        (first_res, last_res) = res_tuple
+    else:
+        first_res = kwargs['first_res'] if 'first_res' in kwargs else None
+        last_res  = kwargs['last_res']  if 'last_res'  in kwargs else None
 
     first_index, last_index = 0, len(res_list_aa)
     if first_res:

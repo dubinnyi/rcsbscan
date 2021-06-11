@@ -72,7 +72,7 @@ class Struct4Fit:
                 else:
                     self.res_range_str = "All"
                 self.ref_res_list = select_residues_from_chain(self.ref_ch, \
-                            first_res = self.res_range_tuple[0], last_res = self.res_range_tuple[1])
+                            res_tuple = self.res_range_tuple)
                 self.ref_res_list_len = len(self.ref_res_list)
             except:
                 eprint("Could not get residues '{}' from chain '{}' of model '{}' in file '{}'".
