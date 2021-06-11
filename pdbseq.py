@@ -5,7 +5,7 @@ import argparse
 
 def main():
     arg_parser = argparse.ArgumentParser(
-        usage='Print sequence information from pdb or mmcif file(s)')
+        usage='Print sequence information from pdb/mmcif/mmtf file(s)')
     arg_parser.add_argument('struct', type=str, help='structures in pdb or mmcif format', nargs='+')
     arg_parser.add_argument('-p', '--print-header', action='store_true',
                             help='print header')
@@ -30,7 +30,7 @@ def main():
     if args.struct:
         for structf in args.struct:
             try:
-                (file_id, format) = parse_structure_filename(structf)
+                (file_id, format, zip_flag) = parse_structure_filename(structf)
                 structure = get_structure_from_file(structf, format=args.format)
                 if not structure:
                     continue

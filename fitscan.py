@@ -96,7 +96,7 @@ def main():
         eprint("No structures selected. Exiting")
         quit(-1)
 
-    print("struct list: {}".format(args.struct))
+    print("struct list: {} (trancated at 10 structures)".format(args.struct[:10]))
 
     if args.recursive:
         struct_list = recursive_expand(args.struct)
