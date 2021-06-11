@@ -28,8 +28,10 @@ rcsbscan.py ARGS
 
 Positional arguments:
   struct                Structure(s) in pdb, mmcif or mmtf format, optionally gzipped. 
-                        Directory or a list of directories with protein structures is allowed with -r flag (see below).
-                        To scan full RCSB database, first download it locally and privide it with an additional -r option
+                        Directory or a list of directories with protein structures is 
+                        allowed with -r flag (see below). To scan full RCSB database, 
+                        first download it locally and privide it with an additional 
+                        -r option
 
 Optional arguments:
   -h, --help            show this help message and exit
@@ -44,7 +46,8 @@ Optional arguments:
                         Residue range in the reference structure, e.g. '26-33'
   --ref-atoms REF_ATOMS
                         Atoms in reference structure. 
-                        By default, only four atoms per residue are considured: N, CA, C, O
+                        By default, only four atoms per residue are considured: 
+                        N, CA, C, O
   -w, --pdb-warnings    Show structure parsing warnings
   -v, --verbose         Verbose output
   -r, --recursive       Recursive search of structures in folders
