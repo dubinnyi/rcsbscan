@@ -66,7 +66,7 @@ Optional arguments:
 
 Ussuming that RCSB clone is downloadad to the folder ```~/RCSB/pdb/```:
 ```
-rcsbscan.py ~/RCSB/pdb/m0/pdb1m0k.ent.gz --ref-structure ./examples/alpha-helix_A10.pdp
+rcsbscan.py ~/RCSB/pdb/m0/pdb1m0k.ent.gz --ref-structure ./examples/alpha-helix_A10.pdb
 ```
 -- scans the ``1M0K`` structure of bacteriorhodopsin at 1.43 A resolution 
 ( (2002) J Mol Biol 321: 715-726 )
