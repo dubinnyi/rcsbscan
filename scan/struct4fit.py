@@ -215,7 +215,7 @@ class Struct4Fit:
                 return
             counter.new_scanned()
             method, resolution = self.get_method_and_resolution(structure)
-            if method == 'x-ray diffraction':
+            if method == 'x-ray diffraction' and resolution:
                 method_string = 'XRay {:4.2f}A'.format(resolution)
             elif method == 'solution nmr':
                 method_string = 'NMR   {:3}#'.format(len(structure))
