@@ -106,7 +106,7 @@ class FitCounter:
         out.append("  {:>7} files scanned".format(self.count_scanned))
         out.append("  {:>7} structures in all models/chains".format(self.count_struct))
         out.append("  {:>7} hits".format(self.count_hits))
-        out.append("  {:>7} unique sequences".format(len(self.count_sequence_set)))
+        out.append("  {:>7} unique hit sequences".format(len(self.count_sequence_set)))
         out.append("  {:>7} unique PDB IDs".format(len(self.count_pdb_set)))
         out.append("  {:>7} hits".format(self.count_hits))
         out.append("  {:>7} {}".format(self.count_res_tuple, self.name))
