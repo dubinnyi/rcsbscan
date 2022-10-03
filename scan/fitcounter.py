@@ -9,6 +9,8 @@ class FitCounter:
         self.counters_reset()
         self.timer_reset()
         self.hits = []
+        self.count_sequence_set = set()
+        self.count_pdb_set = set()
 
     def timer_reset(self):
         self.t0 = None
@@ -49,10 +51,20 @@ class FitCounter:
     def new_res_tuple(self):
         self.count_res_tuple = self.count_res_tuple + 1
 
+    def new_sequence(self, sequence):
+        self.count_sequence_set.add(sequence)
+
+    def new_pdb(self, pdb):
+        self.count_pdb_set.add(pdb)
+
     def new_hit(self, hit = None):
         self.count_hits = self.count_hits + 1
         if hit:
             self.hits.append(hit)
+            if hasattr(hit, 'hit_sequence'):
+                self.new_sequence(hit.hit_sequence)
+            if hasattr(hit, 'pdb'):
+                self.new_pdb(hit.pdb)
 
     def new_error(self):
         self.count_errors = self.count_errors + 1
@@ -94,6 +106,9 @@ class FitCounter:
         out.append("  {:>7} files scanned".format(self.count_scanned))
         out.append("  {:>7} structures in all models/chains".format(self.count_struct))
         out.append("  {:>7} hits".format(self.count_hits))
+        out.append("  {:>7} unique sequences".format(len(self.count_sequence_set)))
+        out.append("  {:>7} unique PDB IDs".format(len(self.count_pdb_set)))
+        out.append("  {:>7} hits".format(self.count_hits))
         out.append("  {:>7} {}".format(self.count_res_tuple, self.name))
         out.append("  {:>7} errors".format(self.count_errors))
         return "\n".join(out)
@@ -103,7 +118,12 @@ class FitCounter:
         print(str(self))
 
     def __add__(self, counter):
+        # print("__add__ method is called for FitCounter")
+        # print("type(counter) = {}".format(type(counter)))
+        # print(counter)
         ret: FitCounter = FitCounter(self.name)
+        # print("type(ret) = {}".format(type(ret)))
+        # print(ret)
         ret.total_time = self.total_time + counter.total_time
         ret.count_files = self.count_files + counter.count_files
         ret.count_skipped = self.count_skipped + counter.count_skipped
@@ -111,6 +131,8 @@ class FitCounter:
         ret.count_struct = self.count_struct + counter.count_struct
         ret.count_res_tuple = self.count_res_tuple + counter.count_res_tuple
         ret.count_hits = self.count_hits + counter.count_hits
+        ret.count_sequence_set.update(self.count_sequence_set, counter.count_sequence_set)
+        ret.count_pdb_set.update(self.count_pdb_set, counter.count_pdb_set)
         ret.count_errors = self.count_errors + counter.count_errors
         ret.hits = self.hits + counter.hits
         return ret

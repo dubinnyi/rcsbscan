@@ -130,10 +130,21 @@ def main():
     #        eprint("Failed to read structure {}".format(structf))
     #        continue
 
+    args_collected = 0
+    if args.verbose:
+        print("Statistics after {} args accumulated".format(args_collected))
+        print(CountTotal)
+
     for rc in result_counters:
         if args.verbose:
+            print("Statistics of arg {} to be appended".format(args_collected))
             print(rc)
+        args_collected += 1
         CountTotal = CountTotal + rc
+        if args.verbose:
+            print("Statistics after {} args accumulated".format(args_collected))
+            print(CountTotal)
+
 
     walltime = walltime_finish - walltime_start
     print("All counters are accumulated")
